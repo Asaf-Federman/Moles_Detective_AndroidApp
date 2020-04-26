@@ -3,26 +3,16 @@ package yearly_project.frontend;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Environment;
-import android.util.Base64;
-import android.util.Log;
+import android.support.annotation.NonNull;
 import android.widget.Toast;
 
-import org.opencv.android.Utils;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
@@ -44,13 +34,14 @@ public class SegmentationModel {
     private Interpreter tflite;
     private Activity activity;
     private ByteBuffer inpImg;                          // model input buffer(uint8)
-    private long[][][] outImg;                            // model output buffer(int64)
+    private int[][][] outImg;                            // model output buffer(int64)
 
     public SegmentationModel(final Activity activity) throws IOException {
         this.activity = activity;
+        Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
-            tflite = new Interpreter(loadModelFile(activity));
-            tflite.setNumThreads(4);
+            tfliteOptions.setNumThreads(4);
+            tflite = new Interpreter(loadMappedFile(activity, MODEL_PATH), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(new Runnable() {
                 @Override
@@ -61,110 +52,60 @@ public class SegmentationModel {
         }
     }
 
-    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
-        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(MODEL_PATH);
-        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-        FileChannel fileChannel = inputStream.getChannel();
-        long startOffset = fileDescriptor.getStartOffset();
-        long declaredLength = fileDescriptor.getDeclaredLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    public void segmentImage(Mat modelMat, int length) {
+        if (tflite != null) {
+            if (inpImg == null) initializeByteBuffer(length);
+            if (outImg == null) initializeOutImg();
+            int oLength=modelMat.height();
+            Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
+            loadMatToBuffer(modelMat);
+            tflite.run(inpImg, outImg);
+            checkWhatContains(outImg, modelMat);
+            Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
+        }
     }
 
 //    public void segmentImage(Mat modelMat, int length) {
 //        if (tflite != null) {
 //            if (inpImg == null) initializeByteBuffer(length);
 //            if (outImg == null) initializeOutImg();
-//            Mat resizedMap = new Mat();
-//            Imgproc.resize(modelMat, resizedMap, new Size(DIM_WIDTH, DIM_HEIGHT));
-//            loadMatToBuffer(resizedMap);
-//            tflite.run(inpImg, outImg);
-////            Bitmap bmp = Bitmap.createBitmap(200, 200, Bitmap.Config.RGB_565);
-////            ByteBuffer buffer = ByteBuffer.wrap(inpImg.array());
-////            bmp.copyPixelsFromBuffer(buffer);
-//            checkWhatContains(outImg);
+//            File imgFile = new File(Environment.getExternalStorageDirectory().getPath() + "/photos");
+//            for (File image : imgFile.listFiles()) {
+//                Bitmap bitmap = null;
+//                if (image.exists()) {
+//                    bitmap = BitmapFactory.decodeFile(image.getAbsolutePath());
+//                }
+//
+//                Bitmap drawableBitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
+//                Mat resizedMap = new Mat();
+//                Utils.bitmapToMat(drawableBitmap, resizedMap);
+//                Imgproc.resize(resizedMap, resizedMap, new Size(DIM_WIDTH, DIM_HEIGHT));
+//                loadMatToBuffer(resizedMap);
+//                tflite.run(inpImg, outImg);
+//                checkWhatContains(outImg,resizedMap,image.getName());
+//                final Bitmap map = MainActivity.convertMatToBitMap(resizedMap);
+//                checkWhatContains(outImg,resizedMap,image.getName());
+//            }
 //        }
 //    }
 
-    public void segmentImage(Mat modelMat, int length) {
-        if (tflite != null) {
-            if (inpImg == null) initializeByteBuffer(length);
-            if (outImg == null) initializeOutImg();
-            File imgFile = new File(Environment.getExternalStorageDirectory().getPath() + "/photos");
-            for (File image : imgFile.listFiles()) {
-                Bitmap bitmap = null;
-                if (image.exists()) {
-                    bitmap = BitmapFactory.decodeFile(image.getAbsolutePath());
-                }
-
-                Bitmap drawableBitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
-                Mat resizedMap = new Mat();
-                Utils.bitmapToMat(drawableBitmap, resizedMap);
-                Imgproc.resize(resizedMap, resizedMap, new Size(DIM_WIDTH, DIM_HEIGHT));
-//                Imgproc.cvtColor(resizedMap, resizedMap, Imgproc.COLOR_RGBA2RGB);
-                loadMatToBuffer(resizedMap);
-                tflite.run(inpImg, outImg);
-
-//                Bitmap bmp = Bitmap.createBitmap(200, 200, Bitmap.Config.RGB_565);
-//                ByteBuffer buffer = ByteBuffer.wrap(inpImg.array());
-//                bmp.copyPixelsFromBuffer(buffer);
-                checkWhatContains(outImg);
-            }
-        }
-    }
-
-    private void loadMatToBuffer(Mat mat){
-        Bitmap image = Bitmap.createBitmap(200,
-                200, Bitmap.Config.RGB_565);
-
-        Utils.matToBitmap(mat, image);
-
-        Bitmap bitmap = (Bitmap) image;
-        inpImg.rewind();
-        bitmap.copyPixelsToBuffer(inpImg);
-        inpImg.rewind();
-    }
-
-
-    private void checkWhatContains(long[][][] outImg) {
-        boolean isDifferentThanZero = false;
+    private void checkWhatContains(int[][][] outImg,Mat mat) {
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < DIM_HEIGHT; j++) {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
-                        isDifferentThanZero = true;
-                        break;
+                        double[] array = mat.get(j,k);
+                        array[2]=255;
+                        mat.put(j,k,array);
                     }
                 }
-//                if (outImg[i][j] != 0) {
-//                    isDifferentThanZero = true;
-//                    break;
-//                }
             }
-        }
-        if (isDifferentThanZero) {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(activity.getApplicationContext(),"MADE IT",Toast.LENGTH_LONG).show();
-            }
-        });
-            Log.i("INFO", "MADE IT");
         }
     }
 
-    private void writeToFile(String data, Context context) {
-        try {
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
-            outputStreamWriter.write(data);
-            outputStreamWriter.close();
-        }
-        catch (IOException e) {
-            Log.e("Exception", "File write failed: " + e.toString());
-        }
-    }
 
     private void initializeOutImg() {
-        outImg = new long[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
+        outImg = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
 //        outImg = new long[DIM_BATCH_SIZE][DIM_WIDTH * DIM_HEIGHT * OUTCHANNELS];
     }
 
@@ -175,22 +116,12 @@ public class SegmentationModel {
         inpImg.order(ByteOrder.nativeOrder());
     }
 
-//    private void loadMatToBuffer(Mat inMat) {
-//        //convert opencv mat to tensorflowlite input
-//        inpImg.rewind();
-//        byte[] data = new byte[DIM_WIDTH * DIM_HEIGHT * INCHANNELS];
-//        inMat.get(0, 0, data);
-//        inpImg = ByteBuffer.wrap(data);
-//    }
-
-//    private void loadMatToBuffer(Bitmap map){
-//        inpImg.rewind();
-//        int[] intValues = new int[120000];
-//
+//    private void loadMatToBuffer(Mat mat){
+//    inpImg.rewind();
 //        map.getPixels(intValues,0,map.getWidth(),0,0,map.getWidth(),map.getHeight());
 //        int pixel =0;
-//        for(int i=0; i<200; ++i){
-//            for(int j=0; j<200; ++j){
+//        for(int i=0; i<DIM_HEIGHT; ++i){
+//            for(int j=0; j<DIM_WIDTH; ++j){
 //                final int val = intValues[pixel++];
 ////                Log.i("INFO", String.valueOf((((float)(((val >> 16) & 0xFF) - IMAGE_MEAN))/IMAGE_STD)));
 //                inpImg.putFloat((((((val >> 16) & 0xFF) - IMAGE_MEAN))/IMAGE_STD));
@@ -200,23 +131,16 @@ public class SegmentationModel {
 //        }
 //    }
 
-    private void loadMatToBuffer(Bitmap map){
+    private void loadMatToBuffer(Mat mat){
         inpImg.rewind();
-        for(int i=0; i<200; ++i){
-            for(int j=0; j<200; ++j){
-                int pixel = map.getPixel(i,j);
-                inpImg.put((byte) ((pixel >> 16)& 0xFF));
-                inpImg.put((byte) ((pixel >> 8)& 0xFF));
-                inpImg.put((byte) ((pixel)& 0xFF));
+        for(int i=0; i<DIM_HEIGHT; ++i){
+            for(int j=0; j<DIM_WIDTH; ++j){
+                double[] pixel = mat.get(i,j);
+                inpImg.put((byte) pixel[0]);
+                inpImg.put((byte)pixel[1]);
+                inpImg.put((byte) pixel[2]);
             }
         }
-    }
-
-    private void loadBufferToMat(Mat modelMat) {
-        //convert tensorflowlite output to opencv mat
-        Mat temp_outSegment = new Mat(DIM_HEIGHT, DIM_WIDTH, CvType.CV_32SC3);  // temp mask(Mat) -> class colors(int32)
-
-        temp_outSegment.convertTo(modelMat, CvType.CV_8UC3);
     }
 
     public void close() {
@@ -224,5 +148,48 @@ public class SegmentationModel {
             tflite.close();
             tflite = null;
         }
+    }
+
+    @NonNull
+    public static MappedByteBuffer loadMappedFile(@NonNull Context context, @NonNull String filePath) throws IOException {
+        AssetFileDescriptor fileDescriptor = context.getAssets().openFd(filePath);
+
+        MappedByteBuffer var9;
+        try {
+            FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+
+            try {
+                FileChannel fileChannel = inputStream.getChannel();
+                long startOffset = fileDescriptor.getStartOffset();
+                long declaredLength = fileDescriptor.getDeclaredLength();
+                var9 = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+            } catch (Throwable var12) {
+                try {
+                    inputStream.close();
+                } catch (Throwable var11) {
+                    var12.addSuppressed(var11);
+                }
+
+                throw var12;
+            }
+
+            inputStream.close();
+        } catch (Throwable var13) {
+            if (fileDescriptor != null) {
+                try {
+                    fileDescriptor.close();
+                } catch (Throwable var10) {
+                    var13.addSuppressed(var10);
+                }
+            }
+
+            throw var13;
+        }
+
+        if (fileDescriptor != null) {
+            fileDescriptor.close();
+        }
+
+        return var9;
     }
 }

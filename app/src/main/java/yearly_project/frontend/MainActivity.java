@@ -187,12 +187,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Imgproc.cvtColor(inputMat, inputMat, Imgproc.COLOR_RGBA2RGB);
 
         initialize(inputMat);
-        Mat mask = createMask(inputMat);
+        final Mat mask = createMask(inputMat);
         Imgproc.cvtColor(mask,mask,Imgproc.COLOR_BGR2RGB);
 
         segModel.segmentImage(mask,200);
-
-//        Mat mat = pasteWeights(inputMat,mask);
 
         final Bitmap bitmap = convertMatToBitMap(mask);
         runOnUiThread(new Runnable() {
@@ -202,11 +200,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
         });
 
-
         Imgproc.rectangle(inputMat, rect.getTopLeft(), rect.getBottomRight(), new Scalar(255, 0, 0), 2);
         Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(0, 0, 255), 2, 8,0);
-//
-//        outputFrame = inputMat;
+
         outputFrame = inputMat;
 
         return outputFrame;
@@ -263,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         Mat smallImage = new Mat(inputMat, rectangle.rect).clone();
 
-//        Core.flip(smallImage.t(), smallImage, 1);
+        Core.flip(smallImage.t(), smallImage, 1);
 
         return smallImage;
     }
