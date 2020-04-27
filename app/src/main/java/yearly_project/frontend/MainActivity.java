@@ -211,13 +211,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Mat pasteWeights(Mat inputMat, Mat mask) {
         Mat mat = new Mat(inputMat.rows(), inputMat.cols(), CvType.CV_8U, Scalar.all(255));
         Mat destination = new Mat(inputMat, rect.rect);
-//        mask.rowRange(0,10).copyTo(inputMat.rowRange((int)rect.getTopLeft().y,(int)rect.getBottomRight().y).colRange((int)rect.getTopLeft().x,(int)rect.getBottomRight().x),mat);
+
         Mat temp = mat.rowRange(100, 200);
         Mat b = temp.t();
         b.copyTo(inputMat.rowRange(100, 200));
-//        Imgproc.resize(mask,mask,inputMat.size());
-//        Imgproc.resize(mask, mat, mat.size(), 0, 0);
-//        mat.copyTo(destination);
 
         return mask;
     }

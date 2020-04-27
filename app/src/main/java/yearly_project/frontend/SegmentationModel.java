@@ -3,6 +3,7 @@ package yearly_project.frontend;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.widget.Toast;
 
@@ -10,6 +11,8 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.gpu.GpuDelegate;
+import org.tensorflow.lite.nnapi.NnApiDelegate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,13 +37,23 @@ public class SegmentationModel {
     private Interpreter tflite;
     private Activity activity;
     private ByteBuffer inpImg;                          // model input buffer(uint8)
-    private int[][][] outImg;                            // model output buffer(int64)
+    private int[][][] outImg;
+    private GpuDelegate gpuDelegate;
+    private NnApiDelegate nnApiDelegate;
 
     public SegmentationModel(final Activity activity) throws IOException {
         this.activity = activity;
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                nnApiDelegate = new NnApiDelegate();
+                tfliteOptions.addDelegate(nnApiDelegate);
+            }else{
+                gpuDelegate = new GpuDelegate();
+                tfliteOptions.addDelegate(gpuDelegate);
+            }
+
             tflite = new Interpreter(loadMappedFile(activity, MODEL_PATH), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(new Runnable() {
@@ -144,6 +157,14 @@ public class SegmentationModel {
     }
 
     public void close() {
+        if(nnApiDelegate != null){
+            nnApiDelegate.close();
+            nnApiDelegate = null;
+        }
+        if(gpuDelegate != null){
+            gpuDelegate.close();
+            gpuDelegate=null;
+        }
         if (tflite != null) {
             tflite.close();
             tflite = null;
