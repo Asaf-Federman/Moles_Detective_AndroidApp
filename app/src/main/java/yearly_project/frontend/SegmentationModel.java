@@ -4,10 +4,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
@@ -46,13 +49,13 @@ public class SegmentationModel {
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                nnApiDelegate = new NnApiDelegate();
-                tfliteOptions.addDelegate(nnApiDelegate);
-            }else{
+//            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//                nnApiDelegate = new NnApiDelegate();
+//                tfliteOptions.addDelegate(nnApiDelegate);
+//            }else{
                 gpuDelegate = new GpuDelegate();
                 tfliteOptions.addDelegate(gpuDelegate);
-            }
+//            }
 
             tflite = new Interpreter(loadMappedFile(activity, MODEL_PATH), tfliteOptions);
         } catch (IOException e) {
@@ -65,7 +68,7 @@ public class SegmentationModel {
         }
     }
 
-    public void segmentImage(Mat modelMat, int length) {
+    public Mat segmentImage(Mat modelMat, int length) {
         if (tflite != null) {
             if (inpImg == null) initializeByteBuffer(length);
             if (outImg == null) initializeOutImg();
@@ -73,9 +76,11 @@ public class SegmentationModel {
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             tflite.run(inpImg, outImg);
-            checkWhatContains(outImg, modelMat);
+            modelMat = loadFromBufferToMat(outImg);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
         }
+
+        return modelMat;
     }
 
 //    public void segmentImage(Mat modelMat, int length) {
@@ -102,18 +107,23 @@ public class SegmentationModel {
 //        }
 //    }
 
-    private void checkWhatContains(int[][][] outImg,Mat mat) {
+    private Mat loadFromBufferToMat(int[][][] outImg) {
+        Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
+//        Imgproc.cvtColor(mat,mat,Imgproc.COLOR_RGBA2RGB);
+
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < DIM_HEIGHT; j++) {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
                         double[] array = mat.get(j,k);
-                        array[2]=255;
+                        array[1]=255;
                         mat.put(j,k,array);
                     }
                 }
             }
         }
+
+        return mat;
     }
 
 
@@ -157,10 +167,10 @@ public class SegmentationModel {
     }
 
     public void close() {
-        if(nnApiDelegate != null){
-            nnApiDelegate.close();
-            nnApiDelegate = null;
-        }
+//        if(nnApiDelegate != null){
+//            nnApiDelegate.close();
+//            nnApiDelegate = null;
+//        }
         if(gpuDelegate != null){
             gpuDelegate.close();
             gpuDelegate=null;
