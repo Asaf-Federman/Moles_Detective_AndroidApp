@@ -1,13 +1,19 @@
 package yearly_project.frontend;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -36,8 +42,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private static final String TAG = "MainActivity";
     JavaCameraView cameraHandler;
     SegmentationModel segModel;
-    ImageView imageView;
-
+    FlashLightController cameraFlash;
+    ImageView home;
     FrameLayout cameraView;
     Rectangle wrappedRectangle, tangentRectangle;
     Circle circle;
@@ -74,9 +80,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        home = findViewById(R.id.home);
         // get interface objects
         cameraView = findViewById(R.id.cameraLayout);
-        imageView = findViewById(R.id.imageView);
 
         // create camera handler
         cameraHandler = new JavaCameraView(this, 0);
@@ -85,6 +91,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraHandler.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         cameraView.addView(cameraHandler);
         cameraHandler.enableView();
+        cameraFlash=new FlashLightController((ImageView) findViewById(R.id.cameraFlash),cameraHandler, this);
+//        findViewById(R.id.cameraFlash).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                cameraFlash.changeState();
+//            }
+//        });
 
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
@@ -165,7 +178,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
-
     }
 
     @Override

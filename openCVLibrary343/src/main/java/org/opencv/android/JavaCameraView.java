@@ -2,12 +2,17 @@ package org.opencv.android;
 
 import java.util.List;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
 import android.os.Build;
+import android.telecom.VideoProfile;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewGroup.LayoutParams;
@@ -42,6 +47,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
     protected JavaCameraFrame[] mCameraFrame;
     private SurfaceTexture mSurfaceTexture;
     private int mPreviewFormat = ImageFormat.NV21;
+    private boolean isFlashMode = false;
 
     public static class JavaCameraSizeAccessor implements ListItemAccessor {
 
@@ -166,6 +172,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && !android.os.Build.MODEL.equals("GT-I9100"))
                         params.setRecordingHint(true);
+                    if(isFlashMode) params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
 
                     List<String> FocusModes = params.getSupportedFocusModes();
                     if (FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
@@ -376,4 +383,21 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
             Log.d(TAG, "Finish processing thread");
         }
     }
+
+    public void setFlashMode(boolean isFlashMode){
+        this.isFlashMode=isFlashMode;
+    }
+
+    public void turnOnTheFlash() {
+        Camera.Parameters params = mCamera.getParameters();
+        params.setFlashMode(params.FLASH_MODE_TORCH);
+        mCamera.setParameters(params);
+    }
+
+    public void turnOffTheFlash() {
+        Camera.Parameters params = mCamera.getParameters();
+        params.setFlashMode(params.FLASH_MODE_OFF);
+        mCamera.setParameters(params);
+    }
+
 }
