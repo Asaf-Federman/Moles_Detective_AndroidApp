@@ -9,14 +9,14 @@ import org.opencv.android.JavaCameraView;
 
 public class FlashLightController {
     private Activity activity;
-    private JavaCameraView camera;
+    private CameraHolder cameraHolder;
     private ImageView flashLight;
     private boolean isTurnedOn;
     private boolean isFlashAvailable;
 
-    public FlashLightController(ImageView flashLight, JavaCameraView camera, Activity activity) {
+    public FlashLightController(ImageView flashLight, CameraHolder cameraHolder, Activity activity) {
         this.flashLight=flashLight;
-        this.camera=camera;
+        this.cameraHolder=cameraHolder;
         this.activity = activity;
         isFlashAvailable();
         setCallback();
@@ -41,7 +41,7 @@ public class FlashLightController {
     }
 
     public void errorMessage(){
-        Toast.makeText(activity,"No flash light device currently available", Toast.LENGTH_LONG).show();
+        Toast.makeText(activity,"No flash light device currently unavailable", Toast.LENGTH_LONG).show();
     }
 
     private void isFlashAvailable(){
@@ -59,12 +59,12 @@ public class FlashLightController {
     }
 
     private void turnOn() {
-        camera.turnOnTheFlash();
-        flashLight.setImageResource(R.drawable.ic_flash_off_black);
+        cameraHolder.getCameraView().turnOnTheFlash();
+        flashLight.setImageResource(R.drawable.ic_flash_off);
     }
 
     private void turnOff() {
-        camera.turnOffTheFlash();
-        flashLight.setImageResource(R.drawable.ic_flash_on_black);
+        cameraHolder.getCameraView().turnOffTheFlash();
+        flashLight.setImageResource(R.drawable.ic_flash_on);
     }
 }

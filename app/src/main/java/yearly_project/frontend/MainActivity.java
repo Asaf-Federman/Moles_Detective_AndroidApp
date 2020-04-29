@@ -1,13 +1,8 @@
 package yearly_project.frontend;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.hardware.Camera;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraManager;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -23,7 +18,6 @@ import androidx.core.content.ContextCompat;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
@@ -40,16 +34,20 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     private static final String TAG = "MainActivity";
-    JavaCameraView cameraHandler;
-    SegmentationModel segModel;
-    FlashLightController cameraFlash;
-    ImageView home;
-    FrameLayout cameraView;
-    Rectangle wrappedRectangle, tangentRectangle;
-    Circle circle;
+
+    private CameraHolder cameraHolder;
+    private SegmentationModel segModel;
+    private FlashLightController cameraFlash;
+    private SwitchCamera switchCamera;
+    private ImageView home;
+    private FrameLayout cameraView;
+    private Rectangle wrappedRectangle, tangentRectangle;
+    private Circle circle;
     private ScaleGestureDetector gestureDetector;
 
-    Mat outputFrame;
+    private Mat inputMat;
+    private Mat mask;
+    private Mat outputFrame;
 
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -65,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
-                    cameraHandler.enableView();
+                    cameraHolder.getCameraView().enableView();
                     break;
                 default:
                     super.onManagerConnected(status);
@@ -85,13 +83,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraView = findViewById(R.id.cameraLayout);
 
         // create camera handler
-        cameraHandler = new JavaCameraView(this, 0);
+        ExtendedJavaCameraView cameraHandler = new ExtendedJavaCameraView(this, 0);
         cameraHandler.setCvCameraViewListener(this);
         cameraHandler.setVisibility(SurfaceView.VISIBLE);
         cameraHandler.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         cameraView.addView(cameraHandler);
         cameraHandler.enableView();
-        cameraFlash=new FlashLightController((ImageView) findViewById(R.id.cameraFlash),cameraHandler, this);
+        cameraHolder = new CameraHolder(cameraHandler);
+        cameraFlash=new FlashLightController((ImageView) findViewById(R.id.cameraFlash),cameraHolder, this);
+        switchCamera = new SwitchCamera((ImageView) findViewById(R.id.switchCamera),cameraHolder, this);
 
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
@@ -151,8 +151,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onPause() {
         super.onPause();
-        if (cameraHandler != null)
-            cameraHandler.disableView();
+        if (cameraHolder.getCameraView() != null)
+            cameraHolder.getCameraView().disableView();
         if (segModel != null) {
             segModel.close();
         }
@@ -162,8 +162,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onDestroy() {
         //stop camera
         super.onDestroy();
-        if (cameraHandler != null) {
-            cameraHandler.disableView();
+        if (cameraHolder.getCameraView() != null) {
+            cameraHolder.getCameraView().disableView();
         }
         if (segModel != null) {
             segModel.close();
@@ -172,29 +172,32 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        initialize(height,width);
     }
 
     @Override
     public void onCameraViewStopped() {
         Log.i("onCameraViewStopped: ", "Camera view has stopped, releasing resources");
 
+        inputMat.release();
+        mask.release();
         outputFrame.release();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        Mat inputMat = inputFrame.rgba();
+        inputMat = inputFrame.rgba();
+//        final Bitmap bitmap = convertMatToBitMap(inputMat);
+        switchCamera.checkForFlip(inputMat);
         Imgproc.cvtColor(inputMat, inputMat, Imgproc.COLOR_RGBA2RGB);
 
-        initialize(inputMat);
-        final Mat mask = createMask(inputMat);
+        mask = createMask(inputMat);
         Imgproc.cvtColor(mask,mask,Imgproc.COLOR_BGR2RGB);
 
         Mat mat = segModel.segmentImage(mask,200);
 
         pasteWeights(inputMat,mat);
 
-//        final Bitmap bitmap = convertMatToBitMap(mask);
 //        runOnUiThread(new Runnable() {
 //            @Override
 //            public void run() {
@@ -202,8 +205,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //            }
 //        });
 
-        Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(255, 0, 0), 2);
-        Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(0, 0, 255), 2, Core.LINE_AA,0);
+        Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(0, 0, 255), 2);
+        Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(255, 0, 0), 2, Core.LINE_AA);
 
         outputFrame = inputMat;
 
@@ -225,21 +228,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 -1);
         Mat cropped = new Mat();
         inputMat.copyTo(cropped, mask);
+        mask.release();
 
         return cutRectangle(cropped);
     }
 
-    private void initialize(Mat inputMat) {
-        int posHeight = inputMat.height();
-        int posWidth = inputMat.width();
-
-        if (wrappedRectangle == null) {
+    private void initialize(int posHeight,int posWidth) {
             wrappedRectangle = initializeRectangle(posHeight, posWidth);
-        }
-
-        if (circle == null) {
             circle = initializeCircle(posHeight, posWidth);
-        }
     }
 
     private Mat cutRectangle(Mat inputMat) {
@@ -247,12 +243,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         point.x = point.x - circle.getRadius();
         point.y = point.y - circle.getRadius();
-
         tangentRectangle = new Rectangle((int) point.x, (int) point.y, circle.getRadius() * 2, circle.getRadius() * 2, 1);
-
         Mat smallImage = new Mat(inputMat, tangentRectangle.rect).clone();
-
-//        Core.flip(smallImage.t(), smallImage, 1);
+        inputMat.release();
 
         return smallImage;
     }

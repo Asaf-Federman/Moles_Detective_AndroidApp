@@ -3,11 +3,15 @@ package yearly_project.frontend;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
+import android.os.Environment;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
@@ -17,6 +21,7 @@ import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
 import org.tensorflow.lite.nnapi.NnApiDelegate;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -75,6 +80,7 @@ public class SegmentationModel {
             int oLength=modelMat.height();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
+            modelMat.release();
             tflite.run(inpImg, outImg);
             modelMat = loadFromBufferToMat(outImg);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
@@ -82,8 +88,8 @@ public class SegmentationModel {
 
         return modelMat;
     }
-
-//    public void segmentImage(Mat modelMat, int length) {
+//
+//    public Mat segmentImage(Mat modelMat, int length) {
 //        if (tflite != null) {
 //            if (inpImg == null) initializeByteBuffer(length);
 //            if (outImg == null) initializeOutImg();
@@ -98,13 +104,17 @@ public class SegmentationModel {
 //                Mat resizedMap = new Mat();
 //                Utils.bitmapToMat(drawableBitmap, resizedMap);
 //                Imgproc.resize(resizedMap, resizedMap, new Size(DIM_WIDTH, DIM_HEIGHT));
+//                Imgproc.cvtColor(resizedMap,resizedMap,Imgproc.COLOR_BGR2RGB);
 //                loadMatToBuffer(resizedMap);
+//                modelMat.release();
 //                tflite.run(inpImg, outImg);
-//                checkWhatContains(outImg,resizedMap,image.getName());
-//                final Bitmap map = MainActivity.convertMatToBitMap(resizedMap);
-//                checkWhatContains(outImg,resizedMap,image.getName());
+//                modelMat = loadFromBufferToMat(outImg);
+//                final Bitmap map = MainActivity.convertMatToBitMap(modelMat);
+//                modelMat = loadFromBufferToMat(outImg);
 //            }
 //        }
+//
+//        return modelMat;
 //    }
 
     private Mat loadFromBufferToMat(int[][][] outImg) {
