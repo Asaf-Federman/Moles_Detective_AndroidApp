@@ -9,7 +9,7 @@ public class Circle {
 
     public Circle(Point center, int radius) {
         this.center = center;
-        this.radius = radius;
+        this.radius = radius/2;
         maximumRadius = radius;
     }
 

@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
-
 import org.opencv.android.JavaCameraView;
 
 public class FlashLightController {

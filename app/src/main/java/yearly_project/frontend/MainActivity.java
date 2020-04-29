@@ -92,12 +92,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraView.addView(cameraHandler);
         cameraHandler.enableView();
         cameraFlash=new FlashLightController((ImageView) findViewById(R.id.cameraFlash),cameraHandler, this);
-//        findViewById(R.id.cameraFlash).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                cameraFlash.changeState();
-//            }
-//        });
 
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
