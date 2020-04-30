@@ -58,8 +58,8 @@ public class SegmentationModel {
 //                nnApiDelegate = new NnApiDelegate();
 //                tfliteOptions.addDelegate(nnApiDelegate);
 //            }else{
-                gpuDelegate = new GpuDelegate();
-                tfliteOptions.addDelegate(gpuDelegate);
+            gpuDelegate = new GpuDelegate();
+            tfliteOptions.addDelegate(gpuDelegate);
 //            }
 
             tflite = new Interpreter(loadMappedFile(activity, MODEL_PATH), tfliteOptions);
@@ -67,7 +67,7 @@ public class SegmentationModel {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(activity.getApplicationContext(),"Failed to load segmentation model",Toast.LENGTH_LONG).show();
+                    Toast.makeText(activity.getApplicationContext(), "Failed to load segmentation model", Toast.LENGTH_LONG).show();
                 }
             });
         }
@@ -77,7 +77,7 @@ public class SegmentationModel {
         if (tflite != null) {
             if (inpImg == null) initializeByteBuffer(length);
             if (outImg == null) initializeOutImg();
-            int oLength=modelMat.height();
+            int oLength = modelMat.height();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             modelMat.release();
@@ -125,9 +125,9 @@ public class SegmentationModel {
             for (int j = 0; j < DIM_HEIGHT; j++) {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
-                        double[] array = mat.get(j,k);
-                        array[1]=255;
-                        mat.put(j,k,array);
+                        double[] array = mat.get(j, k);
+                        array[1] = 255;
+                        mat.put(j, k, array);
                     }
                 }
             }
@@ -164,13 +164,13 @@ public class SegmentationModel {
 //        }
 //    }
 
-    private void loadMatToBuffer(Mat mat){
+    private void loadMatToBuffer(Mat mat) {
         inpImg.rewind();
-        for(int i=0; i<DIM_HEIGHT; ++i){
-            for(int j=0; j<DIM_WIDTH; ++j){
-                double[] pixel = mat.get(i,j);
+        for (int i = 0; i < DIM_HEIGHT; ++i) {
+            for (int j = 0; j < DIM_WIDTH; ++j) {
+                double[] pixel = mat.get(i, j);
                 inpImg.put((byte) pixel[0]);
-                inpImg.put((byte)pixel[1]);
+                inpImg.put((byte) pixel[1]);
                 inpImg.put((byte) pixel[2]);
             }
         }
@@ -181,9 +181,9 @@ public class SegmentationModel {
 //            nnApiDelegate.close();
 //            nnApiDelegate = null;
 //        }
-        if(gpuDelegate != null){
+        if (gpuDelegate != null) {
             gpuDelegate.close();
-            gpuDelegate=null;
+            gpuDelegate = null;
         }
         if (tflite != null) {
             tflite.close();

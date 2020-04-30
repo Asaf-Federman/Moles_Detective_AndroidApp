@@ -97,6 +97,8 @@ public class SwitchCamera {
         if(cameraSide == eCameraSide.FRONT_CAMERA){
             Core.flip(inputMat,inputMat,-1); //rotate 180 degrees clock wise
             Core.flip(inputMat,inputMat,0); //from mirror image to identical
+        }else{
+//            Core.flip(inputMat.t(),inputMat,1);
         }
     }
 

@@ -8,7 +8,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
-import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -27,6 +28,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Rectangle wrappedRectangle, tangentRectangle;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
+    int cameraHeight, cameraWidth;
 
     private Mat inputMat;
     private Mat mask;
@@ -76,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         setContentView(R.layout.activity_main);
 
         home = findViewById(R.id.home);
@@ -83,15 +88,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraView = findViewById(R.id.cameraLayout);
 
         // create camera handler
-        ExtendedJavaCameraView cameraHandler = new ExtendedJavaCameraView(this, 0);
+        final ExtendedJavaCameraView cameraHandler = new ExtendedJavaCameraView(this, 0);
         cameraHandler.setCvCameraViewListener(this);
         cameraHandler.setVisibility(SurfaceView.VISIBLE);
         cameraHandler.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         cameraView.addView(cameraHandler);
+
         cameraHandler.enableView();
+
         cameraHolder = new CameraHolder(cameraHandler);
-        cameraFlash=new FlashLightController((ImageView) findViewById(R.id.cameraFlash),cameraHolder, this);
-        switchCamera = new SwitchCamera((ImageView) findViewById(R.id.switchCamera),cameraHolder, this);
+        cameraFlash = new FlashLightController((ImageView) findViewById(R.id.cameraFlash), cameraHolder, this);
+        switchCamera = new SwitchCamera((ImageView) findViewById(R.id.switchCamera), cameraHolder, this);
 
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
@@ -172,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
-        initialize(height,width);
+        initialize(height, width);
     }
 
     @Override
@@ -187,16 +194,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         inputMat = inputFrame.rgba();
-//        final Bitmap bitmap = convertMatToBitMap(inputMat);
+//        Imgproc.resize(inputMat,inputMat, new Size(cameraWidth,cameraHeight));
         switchCamera.checkForFlip(inputMat);
         Imgproc.cvtColor(inputMat, inputMat, Imgproc.COLOR_RGBA2RGB);
 
         mask = createMask(inputMat);
-        Imgproc.cvtColor(mask,mask,Imgproc.COLOR_BGR2RGB);
+        Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
 
-        Mat mat = segModel.segmentImage(mask,200);
+        mask = segModel.segmentImage(mask, 200);
 
-        pasteWeights(inputMat,mat);
+        pasteWeights(inputMat, mask);
 
 //        runOnUiThread(new Runnable() {
 //            @Override
@@ -205,17 +212,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //            }
 //        });
 
-        Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(0, 0, 255), 2);
-        Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(255, 0, 0), 2, Core.LINE_AA);
+        Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(0, 0, 0), 2);
+        Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
 
         outputFrame = inputMat;
+        final Bitmap bitmap = convertMatToBitMap(inputMat);
 
         return outputFrame;
     }
 
     private void pasteWeights(Mat src, Mat dest) {
-        Mat mat = src.rowRange((int) tangentRectangle.getTopLeft().y,(int) tangentRectangle.getBottomRight().y).colRange((int) tangentRectangle.getTopLeft().x, (int) tangentRectangle.getBottomRight().x);
-        Core.addWeighted(mat,1f,dest,0.3,1,mat);
+        Mat mat = src.rowRange((int) tangentRectangle.getTopLeft().y, (int) tangentRectangle.getBottomRight().y).colRange((int) tangentRectangle.getTopLeft().x, (int) tangentRectangle.getBottomRight().x);
+        Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
     }
 
     private Mat createMask(Mat inputMat) {
@@ -233,9 +241,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         return cutRectangle(cropped);
     }
 
-    private void initialize(int posHeight,int posWidth) {
-            wrappedRectangle = initializeRectangle(posHeight, posWidth);
-            circle = initializeCircle(posHeight, posWidth);
+    private void initialize(int posHeight, int posWidth) {
+        cameraHeight=posHeight;
+        cameraWidth=posWidth;
+        wrappedRectangle = initializeRectangle(posHeight, posWidth);
+        circle = initializeCircle(posHeight, posWidth);
     }
 
     private Mat cutRectangle(Mat inputMat) {
@@ -252,13 +262,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private Circle initializeCircle(int posHeight, int posWidth) {
         Point center = new Point(posWidth / 2, posHeight / 2);
-        int radius = posHeight / 6;
+        int radius = Math.max(posHeight,posWidth) / 6;
 
         return new Circle(center, radius - 5);
     }
 
     private Rectangle initializeRectangle(int posHeight, int posWidth) {
-        int edgeLength = posHeight / 3;
+        int edgeLength = Math.max(posHeight,posWidth) / 3;
 
         return new Rectangle(posWidth, posHeight, edgeLength, edgeLength);
     }

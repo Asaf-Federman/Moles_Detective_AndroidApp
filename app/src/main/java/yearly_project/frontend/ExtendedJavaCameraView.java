@@ -19,13 +19,13 @@ public class ExtendedJavaCameraView extends JavaCameraView {
 
     public void turnOnTheFlash() {
         Camera.Parameters params = mCamera.getParameters();
-        params.setFlashMode(params.FLASH_MODE_TORCH);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
         mCamera.setParameters(params);
     }
 
     public void turnOffTheFlash() {
         Camera.Parameters params = mCamera.getParameters();
-        params.setFlashMode(params.FLASH_MODE_OFF);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
         mCamera.setParameters(params);
     }
 

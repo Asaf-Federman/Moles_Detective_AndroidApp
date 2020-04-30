@@ -23,21 +23,21 @@ public class FlashLightController {
     }
 
     private void setCallback() {
-        if(isFlashAvailable){
+//        if(isFlashAvailable){
             flashLight.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     changeState();
                 }
             });
-        }else{
-            flashLight.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    errorMessage();
-                }
-            });
-        }
+//        }else{
+//            flashLight.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    errorMessage();
+//                }
+//            });
+//        }
     }
 
     public void errorMessage(){
