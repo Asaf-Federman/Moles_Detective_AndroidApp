@@ -1,6 +1,7 @@
 package yearly_project.frontend;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -8,10 +9,13 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
-import android.view.ViewTreeObserver;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Spinner;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -28,7 +32,6 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -46,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Rectangle wrappedRectangle, tangentRectangle;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
+    private Spinner spinner;
+    private Activity activity;
     int cameraHeight, cameraWidth;
 
     private Mat inputMat;
@@ -79,11 +84,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        activity = this;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
 
         home = findViewById(R.id.home);
+        spinner = findViewById(R.id.spinner);
+        ArrayAdapter<SegmentationModel.eModel> adapter = new ArrayAdapter<SegmentationModel.eModel>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
+        spinner.setAdapter(adapter);
+        SegmentationModel.eModel model = SegmentationModel.eModel.V2;
+        int spinnerPosition = adapter.getPosition(model);
+        spinner.setSelection(spinnerPosition);
+
         // get interface objects
         cameraView = findViewById(R.id.cameraLayout);
 
@@ -104,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         // create tensorflow model
         try {
-            segModel = new SegmentationModel(MainActivity.this);
+            segModel = new SegmentationModel(MainActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -119,6 +132,28 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public boolean onTouchEvent(MotionEvent ev) {
         gestureDetector.onTouchEvent(ev);
         return true;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                try {
+                    cameraHolder.getCameraView().disableView();
+                    segModel.close();
+                    segModel = new SegmentationModel(activity, (SegmentationModel.eModel) parentView.getItemAtPosition(position));
+                    cameraHolder.getCameraView().enableView();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+            }
+        });
     }
 
     private class GestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
@@ -149,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
         try {
-            segModel = new SegmentationModel(MainActivity.this);
+            segModel = new SegmentationModel(MainActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -186,31 +221,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public void onCameraViewStopped() {
         Log.i("onCameraViewStopped: ", "Camera view has stopped, releasing resources");
 
-        inputMat.release();
-        mask.release();
-        outputFrame.release();
+        if(inputMat!=null) inputMat.release();
+        if(mask!=null) mask.release();
+        if(outputFrame!=null) outputFrame.release();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         inputMat = inputFrame.rgba();
-//        Imgproc.resize(inputMat,inputMat, new Size(cameraWidth,cameraHeight));
+
         switchCamera.checkForFlip(inputMat);
         Imgproc.cvtColor(inputMat, inputMat, Imgproc.COLOR_RGBA2RGB);
 
-        mask = createMask(inputMat);
+        mask = cutRectangle(inputMat);
         Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
 
         mask = segModel.segmentImage(mask, 200);
 
         pasteWeights(inputMat, mask);
-
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                imageView.setImageBitmap(bitmap);
-//            }
-//        });
 
         Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(0, 0, 0), 2);
         Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
@@ -242,8 +270,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void initialize(int posHeight, int posWidth) {
-        cameraHeight=posHeight;
-        cameraWidth=posWidth;
+        cameraHeight = posHeight;
+        cameraWidth = posWidth;
         wrappedRectangle = initializeRectangle(posHeight, posWidth);
         circle = initializeCircle(posHeight, posWidth);
     }
@@ -262,13 +290,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private Circle initializeCircle(int posHeight, int posWidth) {
         Point center = new Point(posWidth / 2, posHeight / 2);
-        int radius = Math.max(posHeight,posWidth) / 6;
+        int radius = Math.max(posHeight, posWidth) / 6;
 
         return new Circle(center, radius - 5);
     }
 
     private Rectangle initializeRectangle(int posHeight, int posWidth) {
-        int edgeLength = Math.max(posHeight,posWidth) / 3;
+        int edgeLength = Math.max(posHeight, posWidth) / 3;
 
         return new Rectangle(posWidth, posHeight, edgeLength, edgeLength);
     }

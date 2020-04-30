@@ -30,7 +30,24 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class SegmentationModel {
-    private static final String MODEL_PATH = "MobileNet_V2.tflite";    // model to use
+
+    public enum eModel{
+        V2("V2","MobileNet_V2.tflite"),
+        V3_SMALL("V3-Small","MobileNet_V3_small_FLOAT.tflite"),
+        V3_LARGE("V3-Large","MobileNet_V3_large_FLOAT.tflite");
+
+        private String fileName;
+        public String friendlyName;
+
+        eModel(String friendlyName, String fileName){
+            this.fileName = fileName;
+            this.friendlyName=friendlyName;
+        }
+
+        @Override public String toString(){
+            return friendlyName;
+        }
+    }
 
     // image buffers shape
     private static final int DIM_BATCH_SIZE = 1;
@@ -47,22 +64,18 @@ public class SegmentationModel {
     private ByteBuffer inpImg;                          // model input buffer(uint8)
     private int[][][] outImg;
     private GpuDelegate gpuDelegate;
-    private NnApiDelegate nnApiDelegate;
+    private eModel segmentationModel;
 
-    public SegmentationModel(final Activity activity) throws IOException {
+
+    public SegmentationModel(final Activity activity, eModel segmentationModel) throws IOException {
+        this.segmentationModel = segmentationModel;
         this.activity = activity;
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
-//            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-//                nnApiDelegate = new NnApiDelegate();
-//                tfliteOptions.addDelegate(nnApiDelegate);
-//            }else{
             gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
-//            }
-
-            tflite = new Interpreter(loadMappedFile(activity, MODEL_PATH), tfliteOptions);
+            tflite = new Interpreter(loadMappedFile(activity, this.segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(new Runnable() {
                 @Override
