@@ -29,15 +29,14 @@
         android:allowBackup="true"
         android:configChanges="keyboardHidden|screenSize"
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/launchericon"
+        android:icon="@mipmap/ic_launcher"
         android:keepScreenOn="true"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/launchericon_round"
-        android:supportsRtl="true"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme">
-        <activity android:name=".ResultActivity"></activity>
+        <activity android:name=".results.ResultActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name=".camera.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

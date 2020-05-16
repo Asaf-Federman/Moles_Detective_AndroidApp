@@ -8,4 +8,22 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="ToolTipLayoutCustomStyle">
+        <item name="ttlm_backgroundColor">#2196F3</item>
+        <item name="ttlm_cornerRadius">10dip</item>
+        <item name="ttlm_textStyle">@style/ToolTipText</item>
+    </style>
+
+    <style name="ToolTipText" parent="@android:style/TextAppearance.Medium">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorHighlight">@android:color/white</item>
+        <item name="android:textColorHint">@android:color/white</item>
+        <item name="android:textColorLink">@android:color/white</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
 </resources>
