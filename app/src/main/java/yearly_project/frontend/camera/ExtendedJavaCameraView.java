@@ -8,6 +8,8 @@ import org.opencv.android.JavaCameraView;
 
 public class ExtendedJavaCameraView extends JavaCameraView {
 
+    int cameraPosition = CAMERA_ID_BACK;
+
     public ExtendedJavaCameraView(Context context, int cameraId) {
         super(context, cameraId);
     }
@@ -30,11 +32,19 @@ public class ExtendedJavaCameraView extends JavaCameraView {
     }
 
     public void switchCameras() {
-        int index = CAMERA_ID_FRONT;
-        if (mCameraIndex == CAMERA_ID_FRONT)
-            index = CAMERA_ID_BACK;
-        this.disableView();
-        this.setCameraIndex(index);
-        this.enableView();
+        int index;
+        try {
+            index = cameraPosition == CAMERA_ID_FRONT ? CAMERA_ID_BACK : CAMERA_ID_FRONT;
+            this.disableView();
+            this.setCameraIndex(index);
+            this.enableView();
+            cameraPosition = index;
+        }catch(Exception e){
+        }
+
+    }
+
+    public boolean IsCameraBack(){
+        return cameraPosition == CAMERA_ID_BACK ;
     }
 }

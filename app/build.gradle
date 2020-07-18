@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "yearly_project.frontend"
-        minSdkVersion 24
-        targetSdkVersion 28
+        minSdkVersion 26
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -27,11 +27,14 @@ android {
         noCompress "tflite"
         noCompress "lite"
     }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
@@ -43,8 +46,9 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite:+'
     implementation 'org.tensorflow:tensorflow-lite-gpu:+'
 
-    implementation 'com.google.android.material:material:1.2.0-alpha06'
+    implementation 'com.google.android.material:material:1.3.0-alpha01'
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
-    implementation 'com.android.support:cardview-v7:28.0.0'
     implementation 'com.github.sephiroth74:android-target-tooltip:v2.0.4'
+    implementation 'com.loopj.android:android-async-http:1.4.9'
+    implementation 'com.google.code.gson:gson:2.8.5'
 }

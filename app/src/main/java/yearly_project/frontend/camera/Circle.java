@@ -4,21 +4,29 @@ import org.opencv.core.Point;
 
 public class Circle {
     private Point center;
-    private int radius;
-    private int maximumRadius;
+    private float radius;
+    private float maximumRadius;
+    private float minRadius;
 
-    public Circle(Point center, int radius) {
-        this.center = center;
-        this.radius = radius/2;
-        maximumRadius = radius;
+    public Circle(float posHeight, float posWidth, float radius) {
+        center = new Point(posHeight / 2, posWidth / 2);
+        minRadius=50;
+        setMaximumRadius(radius);
+        setRadius(radius/2);
     }
 
-    public int getRadius() {
+    public float getRadius() {
         return radius;
     }
 
-    public void setRadius(int radius) {
-        this.radius = radius;
+    public void setRadius(float radius) {
+        if(radius > maximumRadius){
+            this.radius=maximumRadius;
+        }else if(radius < minRadius){
+            this.radius = minRadius;
+        }else{
+            this.radius = radius;
+        }
     }
 
     public Point getCenter() {
@@ -29,23 +37,20 @@ public class Circle {
         this.center = center;
     }
 
-    public int getMaximumRadius() {
+    public float getMaximumRadius() {
         return maximumRadius;
     }
 
-    public void setMaximumRadius(int maximumRadius) {
-        this.maximumRadius = maximumRadius;
+    public void setMaximumRadius(float maximumRadius) {
+        if(maximumRadius < minRadius){
+            this.maximumRadius = minRadius;
+        }else{
+            this.maximumRadius = maximumRadius;
+        }
     }
 
     public void scale(float mScaleFactor) {
-        int newRadius = (int)(radius * mScaleFactor);
-
-        if(newRadius > maximumRadius){
-            radius=maximumRadius;
-        }else if(newRadius < maximumRadius /5){
-            radius = maximumRadius/5;
-        }else{
-            radius= newRadius;
-        }
+        float newRadius = (radius * mScaleFactor);
+        setRadius(newRadius);
     }
 }

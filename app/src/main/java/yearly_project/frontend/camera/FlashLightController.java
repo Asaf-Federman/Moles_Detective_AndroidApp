@@ -14,6 +14,7 @@ public class FlashLightController {
     private ImageView flashLight;
     private boolean isTurnedOn;
     private boolean isFlashAvailable;
+    private Toast errorMessage;
 
     public FlashLightController(ImageView flashLight, CameraHolder cameraHolder, Activity activity) {
         this.flashLight=flashLight;
@@ -21,28 +22,21 @@ public class FlashLightController {
         this.activity = activity;
         isFlashAvailable();
         setCallback();
+        errorMessage = Toast.makeText(activity,"No flash light device currently unavailable", Toast.LENGTH_LONG);
     }
 
     private void setCallback() {
-//        if(isFlashAvailable){
-            flashLight.setOnClickListener(new View.OnClickListener() {
+        flashLight.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     changeState();
                 }
             });
-//        }else{
-//            flashLight.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    errorMessage();
-//                }
-//            });
-//        }
     }
 
     public void errorMessage(){
-        Toast.makeText(activity,"No flash light device currently unavailable", Toast.LENGTH_LONG).show();
+        errorMessage.cancel();
+        errorMessage.show();
     }
 
     private void isFlashAvailable(){
@@ -60,12 +54,20 @@ public class FlashLightController {
     }
 
     private void turnOn() {
-        cameraHolder.getCameraView().turnOnTheFlash();
-        flashLight.setImageResource(R.drawable.ic_flash_off);
+        if(cameraHolder.getCameraView().IsCameraBack()) {
+            cameraHolder.getCameraView().turnOnTheFlash();
+            flashLight.setImageResource(R.drawable.ic_flash_off);
+        }else{
+            errorMessage();
+        }
     }
 
     private void turnOff() {
-        cameraHolder.getCameraView().turnOffTheFlash();
-        flashLight.setImageResource(R.drawable.ic_flash_on);
+        if(cameraHolder.getCameraView().IsCameraBack()) {
+            cameraHolder.getCameraView().turnOffTheFlash();
+            flashLight.setImageResource(R.drawable.ic_flash_on);
+        }else{
+            errorMessage();
+        }
     }
 }

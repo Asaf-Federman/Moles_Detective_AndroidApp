@@ -2,21 +2,21 @@ package yearly_project.frontend.camera;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Spinner;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -24,9 +24,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -34,36 +32,45 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.time.Instant;
 
+import timber.log.Timber;
+import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.utils.Utilities;
+import yearly_project.frontend.waitScreen.CalculateResults;
 
-public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
+import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
 
-    private static final String TAG = "MainActivity";
+public class CameraActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
+    private static final String TAG = "CameraActivity";
+    private ImageView startButton;
     private CameraHolder cameraHolder;
     private SegmentationModel segModel;
     private FlashLightController cameraFlash;
     private SwitchCamera switchCamera;
-    private ImageView home;
-    private FrameLayout cameraView;
-    private Rectangle wrappedRectangle, tangentRectangle;
+    private SquareWrapper wrappedSquare, tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
     private Spinner spinner;
     private Activity activity;
     private boolean isSpinnerChanged = false;
-    int cameraHeight, cameraWidth;
-
+    private float shapesLength;
+    private static final int DIM_LENGTH = 100;
+    private int counter = 0;
+    private int[][][] result;
+    private long timeInMilliSeconds;
+    private boolean isStart = false;
     private Mat inputMat;
     private Mat mask;
-    private Mat outputFrame;
+    private UserInformation userInformation;
 
     static {
         if (!OpenCVLoader.initDebug()) {
-            Log.i(TAG, "OpenCV fail to load");
+            Timber.i("OpenCV fail to load");
         } else {
-            Log.i(TAG, "OpenCV loaded");
+            Timber.i("OpenCV loaded");
             System.loadLibrary("opencv_java3");
         }
     }
@@ -71,13 +78,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                    cameraHolder.getCameraView().enableView();
-                    break;
-                default:
-                    super.onManagerConnected(status);
-                    break;
+            if (status == LoaderCallbackInterface.SUCCESS) {
+                cameraHolder.getCameraView().enableView();
+            } else {
+                super.onManagerConnected(status);
             }
         }
     };
@@ -88,43 +92,72 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        activity = this;
+        try {
+            userInformation = new UserInformation();
+        } catch (Exception e) {
+            Log.i("WARN", e.getMessage());
+        }
+
+        timeInMilliSeconds = Instant.now().toEpochMilli();
+        startButton = findViewById(R.id.startButton);
+        ImageView home = findViewById(R.id.home);
+        gestureDetector = new ScaleGestureDetector(this, new GestureListener());
+        result = new int[10][][];
+
 //        Intent myIntent = new Intent(this, ResultActivity.class);
 //        startActivity(myIntent);
-        activity = this;
-        home = findViewById(R.id.home);
+
+        initializeSpinner();
+        initializeCamera();
+        initializeTensorFlowModel();
+        askForPermissions();
+    }
+
+    public void OnStartButtonClick(View view){
+        startButton.setClickable(false);
+        AlphaAnimation animation = new AlphaAnimation(1F, 0.0F);
+        animation.setDuration(2000);
+        view.startAnimation(animation);
+        view.setVisibility(View.GONE);
+        isStart = true;
+    }
+
+    private void initializeSpinner() {
+        ArrayAdapter<SegmentationModel.eModel> adapter;
+        int spinnerPosition;
+
         spinner = findViewById(R.id.spinner);
-        ArrayAdapter<SegmentationModel.eModel> adapter = new ArrayAdapter<SegmentationModel.eModel>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
         spinner.setAdapter(adapter);
         SegmentationModel.eModel model = SegmentationModel.eModel.V2;
-        int spinnerPosition = adapter.getPosition(model);
+        spinnerPosition = adapter.getPosition(model);
         spinner.setSelection(spinnerPosition);
+    }
 
-        // get interface objects
-        cameraView = findViewById(R.id.cameraLayout);
-
-        // create camera handler
+    private void initializeCamera() {
+        FrameLayout cameraView = findViewById(R.id.cameraLayout);
         final ExtendedJavaCameraView cameraHandler = new ExtendedJavaCameraView(this, 0);
+
         cameraHandler.setCvCameraViewListener(this);
         cameraHandler.setVisibility(SurfaceView.VISIBLE);
         cameraHandler.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         cameraView.addView(cameraHandler);
-
         cameraHandler.enableView();
-
         cameraHolder = new CameraHolder(cameraHandler);
         cameraFlash = new FlashLightController((ImageView) findViewById(R.id.cameraFlash), cameraHolder, this);
         switchCamera = new SwitchCamera((ImageView) findViewById(R.id.switchCamera), cameraHolder, this);
+    }
 
-        gestureDetector = new ScaleGestureDetector(this, new GestureListener());
-
-        // create tensorflow model
+    private void initializeTensorFlowModel() {
         try {
-            segModel = new SegmentationModel(MainActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        // ask for permissions
+    private void askForPermissions() {
         try {
             askForPermission(10, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA);
         } catch (Exception e) {
@@ -144,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                if(isSpinnerChanged) {
+                if (isSpinnerChanged) {
                     try {
                         cameraHolder.getCameraView().disableView();
                         segModel.close();
@@ -153,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }else{
+                } else {
                     isSpinnerChanged = true;
                 }
             }
@@ -185,19 +218,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults) {
         if (requestCode == 10) {
-            for (int i=0; i<grantResults.length; ++i) {
-                switch (permissions[i]){
+            for (int i = 0; i < grantResults.length; ++i) {
+                switch (permissions[i]) {
                     case Manifest.permission.WRITE_EXTERNAL_STORAGE:
-                        if(grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            createAlertDialog("No Permissions", "There are no write permissions, and therefore the activity can not write to storage");
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
+                            Utilities.createAlertDialog(activity, "No Permissions", "There are no write permissions, and therefore the activity can not write to storage");
                         break;
                     case Manifest.permission.CAMERA:
-                        if(grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            createAlertDialog("No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity");
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
+                            Utilities.createAlertDialog(activity, "No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity");
                         break;
                     case Manifest.permission.READ_EXTERNAL_STORAGE:
-                        if(grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            createAlertDialog("No Permissions", "There are no read permissions, and therefore the activity can not read from storage");
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
+                            Utilities.createAlertDialog(activity, "No Permissions", "There are no read permissions, and therefore the activity can not read from storage");
                         break;
                     default:
                         break;
@@ -220,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
         try {
-            segModel = new SegmentationModel(MainActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -250,16 +283,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        shapesLength = (float) Math.max(height, width) / 3;
         initialize(height, width);
     }
 
     @Override
     public void onCameraViewStopped() {
-        Log.i("onCameraViewStopped: ", "Camera view has stopped, releasing resources");
+        Timber.i("Camera view has stopped, releasing resources");
 
         if (inputMat != null) inputMat.release();
         if (mask != null) mask.release();
-        if (outputFrame != null) outputFrame.release();
     }
 
     @Override
@@ -271,21 +304,43 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         mask = cutRectangle(inputMat);
         Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
-
-        mask = segModel.segmentImage(mask, 100);
-
+        mask = segModel.segmentImage(mask, DIM_LENGTH);
+        checkForSegmentation();
         pasteWeights(inputMat, mask);
 
-        Imgproc.rectangle(inputMat, wrappedRectangle.getTopLeft(), wrappedRectangle.getBottomRight(), new Scalar(0, 0, 0), 2);
-        Imgproc.circle(inputMat, circle.getCenter(), circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
+        Imgproc.rectangle(inputMat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 2);
+        Imgproc.circle(inputMat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
 
-        outputFrame = inputMat;
+        return inputMat;
+    }
 
-        return outputFrame;
+    private void checkForSegmentation() {
+        if (segModel.isSegmentationSuccessful() && isStart) {
+            if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
+                final Mat mat = segModel.getSegmantation();
+                new Thread(() -> convertMatToPicture(mat)).start();
+            }
+
+            ++counter;
+        }
+
+        if (counter == 10) {
+            runOnUiThread(() -> {
+                Intent myIntent = new Intent(activity, CalculateResults.class);
+                myIntent.putExtra("folder_path", getFilesDir().getAbsolutePath() + "/photos/" + timeInMilliSeconds);
+                startActivity(myIntent);
+            });
+        }
+    }
+
+    private void convertMatToPicture(Mat mat) {
+        Mat gray = new Mat();
+        Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
+        userInformation.getInformation().addImage(gray);
     }
 
     private void pasteWeights(Mat src, Mat dest) {
-        Mat mat = src.rowRange((int) tangentRectangle.getTopLeft().y, (int) tangentRectangle.getBottomRight().y).colRange((int) tangentRectangle.getTopLeft().x, (int) tangentRectangle.getBottomRight().x);
+        Mat mat = src.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
         Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
     }
 
@@ -294,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         Imgproc.circle(mask,
                 circle.getCenter(),
-                circle.getRadius(),
+                (int) circle.getRadius(),
                 new Scalar(255, 255, 255),
                 -1);
         Mat cropped = new Mat();
@@ -305,56 +360,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void initialize(int posHeight, int posWidth) {
-        cameraHeight = posHeight;
-        cameraWidth = posWidth;
-        wrappedRectangle = initializeRectangle(posHeight, posWidth);
+        wrappedSquare = initializeRectangle(posHeight, posWidth);
         circle = initializeCircle(posHeight, posWidth);
     }
 
     private Mat cutRectangle(Mat inputMat) {
-        Point point = new Point(circle.getCenter().x, circle.getCenter().y);
+        Point point = circle.getCenter().clone();
 
         point.x = point.x - circle.getRadius();
         point.y = point.y - circle.getRadius();
-        tangentRectangle = new Rectangle((int) point.x, (int) point.y, circle.getRadius() * 2, circle.getRadius() * 2, 1);
-        return new Mat(inputMat, tangentRectangle.rect).clone();
-//        inputMat.release();
+        tangentSquare = new SquareWrapper((int) point.x, (int) point.y, circle.getRadius() * 2, 1);
+        return new Mat(inputMat, tangentSquare.square).clone();
     }
 
     private Circle initializeCircle(int posHeight, int posWidth) {
-        Point center = new Point(posWidth / 2, posHeight / 2);
-        int radius = Math.max(posHeight, posWidth) / 6;
-
-        return new Circle(center, radius - 5);
+        return new Circle(posWidth, posHeight, shapesLength / 2 - 5);
     }
 
-    private Rectangle initializeRectangle(int posHeight, int posWidth) {
-        int edgeLength = Math.max(posHeight, posWidth) / 3;
-
-        return new Rectangle(posWidth, posHeight, edgeLength, edgeLength);
-    }
-
-    public static Bitmap convertMatToBitMap(Mat input) {
-        Bitmap bmp = null;
-        Mat rgb = new Mat();
-
-        Imgproc.cvtColor(input, rgb, Imgproc.COLOR_BGR2RGB);
-        try {
-            bmp = Bitmap.createBitmap(rgb.cols(), rgb.rows(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(rgb, bmp);
-        } catch (CvException e) {
-            Log.d("Exception", e.getMessage());
-        }
-
-        return bmp;
-    }
-
-    private void createAlertDialog(String title, String content){
-        new AlertDialog.Builder(activity)
-                .setTitle(title)
-                .setMessage(content)
-                .setPositiveButton(android.R.string.ok, null)
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show();
+    private SquareWrapper initializeRectangle(int posHeight, int posWidth) {
+        return new SquareWrapper(posWidth, posHeight, shapesLength);
     }
 }

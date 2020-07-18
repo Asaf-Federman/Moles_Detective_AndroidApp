@@ -23,6 +23,7 @@ public class SwitchCamera {
     private CameraHolder cameraHolder;
     private eCameraSide cameraSide;
     private boolean isFrontCameraAvailable;
+    private Toast errorMessage;
 //    private boolean isResetCamera=true;
 
     public SwitchCamera(ImageView cameraPicture, CameraHolder cameraHolder, Activity activity) {
@@ -31,6 +32,7 @@ public class SwitchCamera {
         this.cameraHolder = cameraHolder;
         this.cameraSide = eCameraSide.BACK_CAMERA;
         isFrontCameraAvailable = isFrontCameraAvailable();
+        errorMessage = Toast.makeText(this.activity,"No flash light device currently available", Toast.LENGTH_LONG);
         setCallback();
     }
 
@@ -52,8 +54,9 @@ public class SwitchCamera {
         }
     }
 
-    public void errorMessage(){
-        Toast.makeText(activity,"No flash light device currently available", Toast.LENGTH_LONG).show();
+    private void errorMessage(){
+        errorMessage.cancel();
+        errorMessage.show();
     }
 
     public void changeState() {
@@ -74,7 +77,7 @@ public class SwitchCamera {
     }
 
 
-    public boolean isFrontCameraAvailable() {
+    private boolean isFrontCameraAvailable() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int numberOfCameras = Camera.getNumberOfCameras();
         for (int i = 0; i < numberOfCameras; i++) {
@@ -91,12 +94,7 @@ public class SwitchCamera {
         if(cameraSide == eCameraSide.FRONT_CAMERA){
             Core.flip(inputMat,inputMat,-1); //rotate 180 degrees clock wise
             Core.flip(inputMat,inputMat,0); //from mirror image to identical
-        }else{
-//            Core.flip(inputMat.t(),inputMat,1);
         }
     }
 
-//    public void consumeResetResource(){
-//        setResetCamera(false);
-//    }
 }

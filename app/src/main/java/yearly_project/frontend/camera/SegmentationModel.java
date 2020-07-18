@@ -1,17 +1,8 @@
 package yearly_project.frontend.camera;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Build;
-import android.os.Environment;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-
-import org.opencv.android.Utils;
+import org.jetbrains.annotations.NotNull;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
@@ -19,15 +10,12 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
-import org.tensorflow.lite.nnapi.NnApiDelegate;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+
+import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
 
@@ -44,6 +32,7 @@ public class SegmentationModel {
             this.friendlyName=friendlyName;
         }
 
+        @NotNull
         @Override public String toString(){
             return friendlyName;
         }
@@ -60,27 +49,23 @@ public class SegmentationModel {
     private static final float IMAGE_STD = 1;
 
     private Interpreter tflite;
-    private Activity activity;
-    private ByteBuffer inpImg;                          // model input buffer(uint8)
-    private int[][][] outImg;
+    private ByteBuffer inBuffer;                          // model input buffer(uint8)
+    private int[][][] outBuffer;
     private GpuDelegate gpuDelegate;
-    private eModel segmentationModel;
 
 
     public SegmentationModel(final Activity activity, eModel segmentationModel) throws IOException {
-        this.segmentationModel = segmentationModel;
-        this.activity = activity;
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
             gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
-            tflite = new Interpreter(loadMappedFile(activity, this.segmentationModel.fileName), tfliteOptions);
+            tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(activity.getApplicationContext(), "Failed to load segmentation model", Toast.LENGTH_LONG).show();
+                    Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model");
                 }
             });
         }
@@ -88,14 +73,14 @@ public class SegmentationModel {
 
     public Mat segmentImage(Mat modelMat, int length) {
         if (tflite != null) {
-            if (inpImg == null) initializeByteBuffer(length);
-            if (outImg == null) initializeOutImg();
+            if (inBuffer == null) initializeInByteBuffer(length);
+            if (outBuffer == null) initializeOutBuffer();
             int oLength = modelMat.height();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             modelMat.release();
-            tflite.run(inpImg, outImg);
-            modelMat = loadFromBufferToMat(outImg);
+            tflite.run(inBuffer, outBuffer);
+            modelMat = loadFromBufferToMat(outBuffer);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
         }
 
@@ -132,7 +117,6 @@ public class SegmentationModel {
 
     private Mat loadFromBufferToMat(int[][][] outImg) {
         Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
-//        Imgproc.cvtColor(mat,mat,Imgproc.COLOR_RGBA2RGB);
 
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < DIM_HEIGHT; j++) {
@@ -150,16 +134,16 @@ public class SegmentationModel {
     }
 
 
-    private void initializeOutImg() {
-        outImg = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
+    private void initializeOutBuffer() {
+        outBuffer = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
 //        outImg = new long[DIM_BATCH_SIZE][DIM_WIDTH * DIM_HEIGHT * OUTCHANNELS];
     }
 
-    private void initializeByteBuffer(int length) {
+    private void initializeInByteBuffer(int length) {
         DIM_HEIGHT = length;
         DIM_WIDTH = length;
-        inpImg = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
-        inpImg.order(ByteOrder.nativeOrder());
+        inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
+        inBuffer.order(ByteOrder.nativeOrder());
     }
 
 //    private void loadMatToBuffer(Mat mat){
@@ -178,22 +162,56 @@ public class SegmentationModel {
 //    }
 
     private void loadMatToBuffer(Mat mat) {
-        inpImg.rewind();
+        inBuffer.rewind();
         for (int i = 0; i < DIM_HEIGHT; ++i) {
             for (int j = 0; j < DIM_WIDTH; ++j) {
                 double[] pixel = mat.get(i, j);
-                inpImg.put((byte) pixel[0]);
-                inpImg.put((byte) pixel[1]);
-                inpImg.put((byte) pixel[2]);
+                inBuffer.put((byte) pixel[0]);
+                inBuffer.put((byte) pixel[1]);
+                inBuffer.put((byte) pixel[2]);
             }
         }
     }
 
+    public boolean isSegmentationSuccessful(){
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < DIM_HEIGHT; j++) {
+                for (int k = 0; k < DIM_WIDTH; k++) {
+                    if (outBuffer[i][j][k] != 0) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public int[][] getResult(){
+        return outBuffer[0];
+    }
+
+    public Mat getSegmantation(){
+        Mat mat  = new Mat(DIM_WIDTH,DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
+
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < DIM_HEIGHT; j++) {
+                for (int k = 0; k < DIM_WIDTH; k++) {
+                    if (outBuffer[i][j][k] != 0) {
+                        double[] pixel = mat.get(j,k);
+                        pixel[0]=255;
+                        pixel[1]=255;
+                        pixel[2]=255;
+                        mat.put(j, k, pixel);
+                    }
+                }
+            }
+        }
+
+        return mat;
+    }
+
     public void close() {
-//        if(nnApiDelegate != null){
-//            nnApiDelegate.close();
-//            nnApiDelegate = null;
-//        }
         if (gpuDelegate != null) {
             gpuDelegate.close();
             gpuDelegate = null;
@@ -202,48 +220,5 @@ public class SegmentationModel {
             tflite.close();
             tflite = null;
         }
-    }
-
-    @NonNull
-    public static MappedByteBuffer loadMappedFile(@NonNull Context context, @NonNull String filePath) throws IOException {
-        AssetFileDescriptor fileDescriptor = context.getAssets().openFd(filePath);
-
-        MappedByteBuffer var9;
-        try {
-            FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-
-            try {
-                FileChannel fileChannel = inputStream.getChannel();
-                long startOffset = fileDescriptor.getStartOffset();
-                long declaredLength = fileDescriptor.getDeclaredLength();
-                var9 = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-            } catch (Throwable var12) {
-                try {
-                    inputStream.close();
-                } catch (Throwable var11) {
-                    var12.addSuppressed(var11);
-                }
-
-                throw var12;
-            }
-
-            inputStream.close();
-        } catch (Throwable var13) {
-            if (fileDescriptor != null) {
-                try {
-                    fileDescriptor.close();
-                } catch (Throwable var10) {
-                    var13.addSuppressed(var10);
-                }
-            }
-
-            throw var13;
-        }
-
-        if (fileDescriptor != null) {
-            fileDescriptor.close();
-        }
-
-        return var9;
     }
 }
