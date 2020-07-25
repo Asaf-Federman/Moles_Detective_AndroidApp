@@ -1,24 +1,17 @@
 package yearly_project.frontend.camera;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Spinner;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -32,12 +25,12 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import timber.log.Timber;
+import yearly_project.frontend.Constants;
+import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
-import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
@@ -53,18 +46,16 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     private SquareWrapper wrappedSquare, tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
-    private Spinner spinner;
+//    private Spinner spinner;
     private Activity activity;
-    private boolean isSpinnerChanged = false;
+//    private boolean isSpinnerChanged = false;
     private float shapesLength;
     private static final int DIM_LENGTH = 100;
     private int counter = 0;
-    private int[][][] result;
-    private long timeInMilliSeconds;
     private boolean isStart = false;
     private Mat inputMat;
     private Mat mask;
-    private UserInformation userInformation;
+    private Information information;
 
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -90,28 +81,19 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_camera);
 
         activity = this;
-        try {
-            userInformation = new UserInformation();
-        } catch (Exception e) {
-            Log.i("WARN", e.getMessage());
-        }
 
-        timeInMilliSeconds = Instant.now().toEpochMilli();
+        information = UserInformation.createNewInformation();
         startButton = findViewById(R.id.startButton);
         ImageView home = findViewById(R.id.home);
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
-        result = new int[10][][];
 
-//        Intent myIntent = new Intent(this, ResultActivity.class);
-//        startActivity(myIntent);
 
-        initializeSpinner();
+//        initializeSpinner();
         initializeCamera();
         initializeTensorFlowModel();
-        askForPermissions();
     }
 
     public void OnStartButtonClick(View view){
@@ -123,17 +105,17 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         isStart = true;
     }
 
-    private void initializeSpinner() {
-        ArrayAdapter<SegmentationModel.eModel> adapter;
-        int spinnerPosition;
-
-        spinner = findViewById(R.id.spinner);
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
-        spinner.setAdapter(adapter);
-        SegmentationModel.eModel model = SegmentationModel.eModel.V2;
-        spinnerPosition = adapter.getPosition(model);
-        spinner.setSelection(spinnerPosition);
-    }
+//    private void initializeSpinner() {
+//        ArrayAdapter<SegmentationModel.eModel> adapter;
+//        int spinnerPosition;
+//
+//        spinner = findViewById(R.id.spinner);
+//        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
+//        spinner.setAdapter(adapter);
+//        SegmentationModel.eModel model = SegmentationModel.eModel.V3_LARGE;
+//        spinnerPosition = adapter.getPosition(model);
+//        spinner.setSelection(spinnerPosition);
+//    }
 
     private void initializeCamera() {
         FrameLayout cameraView = findViewById(R.id.cameraLayout);
@@ -151,17 +133,10 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
 
     private void initializeTensorFlowModel() {
         try {
-            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+//            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+            segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void askForPermissions() {
-        try {
-            askForPermission(10, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA);
-        } catch (Exception e) {
-            activity.finish();
         }
     }
 
@@ -171,31 +146,31 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         return true;
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                if (isSpinnerChanged) {
-                    try {
-                        cameraHolder.getCameraView().disableView();
-                        segModel.close();
-                        segModel = new SegmentationModel(activity, (SegmentationModel.eModel) parentView.getItemAtPosition(position));
-                        cameraHolder.getCameraView().enableView();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    isSpinnerChanged = true;
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-            }
-        });
-    }
+//    @Override
+//    protected void onStart() {
+//        super.onStart();
+//        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+//                if (isSpinnerChanged) {
+//                    try {
+//                        cameraHolder.getCameraView().disableView();
+//                        segModel.close();
+//                        segModel = new SegmentationModel(activity, (SegmentationModel.eModel) parentView.getItemAtPosition(position));
+//                        cameraHolder.getCameraView().enableView();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                } else {
+//                    isSpinnerChanged = true;
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parentView) {
+//            }
+//        });
+//    }
 
     private class GestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
@@ -210,40 +185,6 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
 
     }
 
-    private void askForPermission(Integer requestCode, String... permissions) throws Exception {
-        PermissionHandler(requestCode, permissions);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String[] permissions, int[] grantResults) {
-        if (requestCode == 10) {
-            for (int i = 0; i < grantResults.length; ++i) {
-                switch (permissions[i]) {
-                    case Manifest.permission.WRITE_EXTERNAL_STORAGE:
-                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            Utilities.createAlertDialog(activity, "No Permissions", "There are no write permissions, and therefore the activity can not write to storage");
-                        break;
-                    case Manifest.permission.CAMERA:
-                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            Utilities.createAlertDialog(activity, "No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity");
-                        break;
-                    case Manifest.permission.READ_EXTERNAL_STORAGE:
-                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            Utilities.createAlertDialog(activity, "No Permissions", "There are no read permissions, and therefore the activity can not read from storage");
-                        break;
-                    default:
-                        break;
-
-                }
-            }
-        }
-    }
-
-    private void PermissionHandler(Integer requestCode, String... permissionsToRequest) {
-        ActivityCompat.requestPermissions(activity, permissionsToRequest, requestCode);
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -253,7 +194,8 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
         try {
-            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+//            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
+            segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -325,10 +267,10 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         }
 
         if (counter == 10) {
+            isStart = false;
             runOnUiThread(() -> {
-                Intent myIntent = new Intent(activity, CalculateResults.class);
-                myIntent.putExtra("folder_path", getFilesDir().getAbsolutePath() + "/photos/" + timeInMilliSeconds);
-                startActivity(myIntent);
+                activityResult(Constants.RESULT_SUCCESS);
+                finish();
             });
         }
     }
@@ -336,7 +278,7 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     private void convertMatToPicture(Mat mat) {
         Mat gray = new Mat();
         Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
-        userInformation.getInformation().addImage(gray);
+        information.addImage(gray);
     }
 
     private void pasteWeights(Mat src, Mat dest) {
@@ -379,5 +321,22 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
 
     private SquareWrapper initializeRectangle(int posHeight, int posWidth) {
         return new SquareWrapper(posWidth, posHeight, shapesLength);
+    }
+
+    @Override
+    public void onBackPressed() {
+        activityResult(Constants.RESULT_FAILURE);
+        super.onBackPressed();
+    }
+
+    private void activityResult(int result) {
+        Intent data = new Intent(activity, CalculateResults.class);
+        data.putExtra("ID", information.getSerialNumber());
+        setResult(result,data);
+    }
+
+    public void OnHomeClick(View view){
+        activityResult(Constants.RESULT_FAILURE);
+        finish();
     }
 }

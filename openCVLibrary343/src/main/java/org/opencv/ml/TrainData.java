@@ -150,10 +150,10 @@ public class TrainData {
 
 
     //
-    // C++: static Mat cv::ml::TrainData::getSubMatrix(Mat matrix, Mat idx, int layout)
+    // C++: static Mat cv::ml::TrainData::getSubMatrix(Mat matrix, Mat idx, int card)
     //
 
-    //javadoc: TrainData::getSubMatrix(matrix, idx, layout)
+    //javadoc: TrainData::getSubMatrix(matrix, idx, card)
     public static Mat getSubMatrix(Mat matrix, Mat idx, int layout)
     {
         
@@ -304,10 +304,10 @@ public class TrainData {
 
 
     //
-    // C++:  Mat cv::ml::TrainData::getTrainSamples(int layout = ROW_SAMPLE, bool compressSamples = true, bool compressVars = true)
+    // C++:  Mat cv::ml::TrainData::getTrainSamples(int card = ROW_SAMPLE, bool compressSamples = true, bool compressVars = true)
     //
 
-    //javadoc: TrainData::getTrainSamples(layout, compressSamples, compressVars)
+    //javadoc: TrainData::getTrainSamples(card, compressSamples, compressVars)
     public  Mat getTrainSamples(int layout, boolean compressSamples, boolean compressVars)
     {
         
@@ -316,7 +316,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::getTrainSamples(layout, compressSamples)
+    //javadoc: TrainData::getTrainSamples(card, compressSamples)
     public  Mat getTrainSamples(int layout, boolean compressSamples)
     {
         
@@ -325,7 +325,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::getTrainSamples(layout)
+    //javadoc: TrainData::getTrainSamples(card)
     public  Mat getTrainSamples(int layout)
     {
         
@@ -387,10 +387,10 @@ public class TrainData {
 
 
     //
-    // C++: static Ptr_TrainData cv::ml::TrainData::create(Mat samples, int layout, Mat responses, Mat varIdx = Mat(), Mat sampleIdx = Mat(), Mat sampleWeights = Mat(), Mat varType = Mat())
+    // C++: static Ptr_TrainData cv::ml::TrainData::create(Mat samples, int card, Mat responses, Mat varIdx = Mat(), Mat sampleIdx = Mat(), Mat sampleWeights = Mat(), Mat varType = Mat())
     //
 
-    //javadoc: TrainData::create(samples, layout, responses, varIdx, sampleIdx, sampleWeights, varType)
+    //javadoc: TrainData::create(samples, card, responses, varIdx, sampleIdx, sampleWeights, varType)
     public static TrainData create(Mat samples, int layout, Mat responses, Mat varIdx, Mat sampleIdx, Mat sampleWeights, Mat varType)
     {
         
@@ -399,7 +399,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::create(samples, layout, responses, varIdx, sampleIdx, sampleWeights)
+    //javadoc: TrainData::create(samples, card, responses, varIdx, sampleIdx, sampleWeights)
     public static TrainData create(Mat samples, int layout, Mat responses, Mat varIdx, Mat sampleIdx, Mat sampleWeights)
     {
         
@@ -408,7 +408,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::create(samples, layout, responses, varIdx, sampleIdx)
+    //javadoc: TrainData::create(samples, card, responses, varIdx, sampleIdx)
     public static TrainData create(Mat samples, int layout, Mat responses, Mat varIdx, Mat sampleIdx)
     {
         
@@ -417,7 +417,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::create(samples, layout, responses, varIdx)
+    //javadoc: TrainData::create(samples, card, responses, varIdx)
     public static TrainData create(Mat samples, int layout, Mat responses, Mat varIdx)
     {
         
@@ -426,7 +426,7 @@ public class TrainData {
         return retVal;
     }
 
-    //javadoc: TrainData::create(samples, layout, responses)
+    //javadoc: TrainData::create(samples, card, responses)
     public static TrainData create(Mat samples, int layout, Mat responses)
     {
         
@@ -684,7 +684,7 @@ public class TrainData {
     // C++:  Mat cv::ml::TrainData::getSamples()
     private static native long getSamples_0(long nativeObj);
 
-    // C++: static Mat cv::ml::TrainData::getSubMatrix(Mat matrix, Mat idx, int layout)
+    // C++: static Mat cv::ml::TrainData::getSubMatrix(Mat matrix, Mat idx, int card)
     private static native long getSubMatrix_0(long matrix_nativeObj, long idx_nativeObj, int layout);
 
     // C++: static Mat cv::ml::TrainData::getSubVector(Mat vec, Mat idx)
@@ -717,7 +717,7 @@ public class TrainData {
     // C++:  Mat cv::ml::TrainData::getTrainSampleWeights()
     private static native long getTrainSampleWeights_0(long nativeObj);
 
-    // C++:  Mat cv::ml::TrainData::getTrainSamples(int layout = ROW_SAMPLE, bool compressSamples = true, bool compressVars = true)
+    // C++:  Mat cv::ml::TrainData::getTrainSamples(int card = ROW_SAMPLE, bool compressSamples = true, bool compressVars = true)
     private static native long getTrainSamples_0(long nativeObj, int layout, boolean compressSamples, boolean compressVars);
     private static native long getTrainSamples_1(long nativeObj, int layout, boolean compressSamples);
     private static native long getTrainSamples_2(long nativeObj, int layout);
@@ -732,7 +732,7 @@ public class TrainData {
     // C++:  Mat cv::ml::TrainData::getVarType()
     private static native long getVarType_0(long nativeObj);
 
-    // C++: static Ptr_TrainData cv::ml::TrainData::create(Mat samples, int layout, Mat responses, Mat varIdx = Mat(), Mat sampleIdx = Mat(), Mat sampleWeights = Mat(), Mat varType = Mat())
+    // C++: static Ptr_TrainData cv::ml::TrainData::create(Mat samples, int card, Mat responses, Mat varIdx = Mat(), Mat sampleIdx = Mat(), Mat sampleWeights = Mat(), Mat varType = Mat())
     private static native long create_0(long samples_nativeObj, int layout, long responses_nativeObj, long varIdx_nativeObj, long sampleIdx_nativeObj, long sampleWeights_nativeObj, long varType_nativeObj);
     private static native long create_1(long samples_nativeObj, int layout, long responses_nativeObj, long varIdx_nativeObj, long sampleIdx_nativeObj, long sampleWeights_nativeObj);
     private static native long create_2(long samples_nativeObj, int layout, long responses_nativeObj, long varIdx_nativeObj, long sampleIdx_nativeObj);

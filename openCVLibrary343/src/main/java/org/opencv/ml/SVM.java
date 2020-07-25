@@ -140,10 +140,10 @@ public class SVM extends StatModel {
 
 
     //
-    // C++:  bool cv::ml::SVM::trainAuto(Mat samples, int layout, Mat responses, int kFold = 10, Ptr_ParamGrid Cgrid = SVM::getDefaultGridPtr(SVM::C), Ptr_ParamGrid gammaGrid = SVM::getDefaultGridPtr(SVM::GAMMA), Ptr_ParamGrid pGrid = SVM::getDefaultGridPtr(SVM::P), Ptr_ParamGrid nuGrid = SVM::getDefaultGridPtr(SVM::NU), Ptr_ParamGrid coeffGrid = SVM::getDefaultGridPtr(SVM::COEF), Ptr_ParamGrid degreeGrid = SVM::getDefaultGridPtr(SVM::DEGREE), bool balanced = false)
+    // C++:  bool cv::ml::SVM::trainAuto(Mat samples, int card, Mat responses, int kFold = 10, Ptr_ParamGrid Cgrid = SVM::getDefaultGridPtr(SVM::C), Ptr_ParamGrid gammaGrid = SVM::getDefaultGridPtr(SVM::GAMMA), Ptr_ParamGrid pGrid = SVM::getDefaultGridPtr(SVM::P), Ptr_ParamGrid nuGrid = SVM::getDefaultGridPtr(SVM::NU), Ptr_ParamGrid coeffGrid = SVM::getDefaultGridPtr(SVM::COEF), Ptr_ParamGrid degreeGrid = SVM::getDefaultGridPtr(SVM::DEGREE), bool balanced = false)
     //
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid, degreeGrid, balanced)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid, degreeGrid, balanced)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid, ParamGrid pGrid, ParamGrid nuGrid, ParamGrid coeffGrid, ParamGrid degreeGrid, boolean balanced)
     {
         
@@ -152,7 +152,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid, degreeGrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid, degreeGrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid, ParamGrid pGrid, ParamGrid nuGrid, ParamGrid coeffGrid, ParamGrid degreeGrid)
     {
         
@@ -161,7 +161,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid, coeffGrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid, ParamGrid pGrid, ParamGrid nuGrid, ParamGrid coeffGrid)
     {
         
@@ -170,7 +170,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid, pGrid, nuGrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid, ParamGrid pGrid, ParamGrid nuGrid)
     {
         
@@ -179,7 +179,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid, pGrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid, pGrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid, ParamGrid pGrid)
     {
         
@@ -188,7 +188,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid, gammaGrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid, gammaGrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid, ParamGrid gammaGrid)
     {
         
@@ -197,7 +197,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold, Cgrid)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold, Cgrid)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold, ParamGrid Cgrid)
     {
         
@@ -206,7 +206,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses, kFold)
+    //javadoc: SVM::trainAuto(samples, card, responses, kFold)
     public  boolean trainAuto(Mat samples, int layout, Mat responses, int kFold)
     {
         
@@ -215,7 +215,7 @@ public class SVM extends StatModel {
         return retVal;
     }
 
-    //javadoc: SVM::trainAuto(samples, layout, responses)
+    //javadoc: SVM::trainAuto(samples, card, responses)
     public  boolean trainAuto(Mat samples, int layout, Mat responses)
     {
         
@@ -519,7 +519,7 @@ public class SVM extends StatModel {
     // C++:  TermCriteria cv::ml::SVM::getTermCriteria()
     private static native double[] getTermCriteria_0(long nativeObj);
 
-    // C++:  bool cv::ml::SVM::trainAuto(Mat samples, int layout, Mat responses, int kFold = 10, Ptr_ParamGrid Cgrid = SVM::getDefaultGridPtr(SVM::C), Ptr_ParamGrid gammaGrid = SVM::getDefaultGridPtr(SVM::GAMMA), Ptr_ParamGrid pGrid = SVM::getDefaultGridPtr(SVM::P), Ptr_ParamGrid nuGrid = SVM::getDefaultGridPtr(SVM::NU), Ptr_ParamGrid coeffGrid = SVM::getDefaultGridPtr(SVM::COEF), Ptr_ParamGrid degreeGrid = SVM::getDefaultGridPtr(SVM::DEGREE), bool balanced = false)
+    // C++:  bool cv::ml::SVM::trainAuto(Mat samples, int card, Mat responses, int kFold = 10, Ptr_ParamGrid Cgrid = SVM::getDefaultGridPtr(SVM::C), Ptr_ParamGrid gammaGrid = SVM::getDefaultGridPtr(SVM::GAMMA), Ptr_ParamGrid pGrid = SVM::getDefaultGridPtr(SVM::P), Ptr_ParamGrid nuGrid = SVM::getDefaultGridPtr(SVM::NU), Ptr_ParamGrid coeffGrid = SVM::getDefaultGridPtr(SVM::COEF), Ptr_ParamGrid degreeGrid = SVM::getDefaultGridPtr(SVM::DEGREE), bool balanced = false)
     private static native boolean trainAuto_0(long nativeObj, long samples_nativeObj, int layout, long responses_nativeObj, int kFold, long Cgrid_nativeObj, long gammaGrid_nativeObj, long pGrid_nativeObj, long nuGrid_nativeObj, long coeffGrid_nativeObj, long degreeGrid_nativeObj, boolean balanced);
     private static native boolean trainAuto_1(long nativeObj, long samples_nativeObj, int layout, long responses_nativeObj, int kFold, long Cgrid_nativeObj, long gammaGrid_nativeObj, long pGrid_nativeObj, long nuGrid_nativeObj, long coeffGrid_nativeObj, long degreeGrid_nativeObj);
     private static native boolean trainAuto_2(long nativeObj, long samples_nativeObj, int layout, long responses_nativeObj, int kFold, long Cgrid_nativeObj, long gammaGrid_nativeObj, long pGrid_nativeObj, long nuGrid_nativeObj, long coeffGrid_nativeObj);

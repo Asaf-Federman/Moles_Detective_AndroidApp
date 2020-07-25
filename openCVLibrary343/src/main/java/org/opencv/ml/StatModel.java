@@ -67,10 +67,10 @@ public class StatModel extends Algorithm {
 
 
     //
-    // C++:  bool cv::ml::StatModel::train(Mat samples, int layout, Mat responses)
+    // C++:  bool cv::ml::StatModel::train(Mat samples, int card, Mat responses)
     //
 
-    //javadoc: StatModel::train(samples, layout, responses)
+    //javadoc: StatModel::train(samples, card, responses)
     public  boolean train(Mat samples, int layout, Mat responses)
     {
         
@@ -179,7 +179,7 @@ public class StatModel extends Algorithm {
     // C++:  bool cv::ml::StatModel::isTrained()
     private static native boolean isTrained_0(long nativeObj);
 
-    // C++:  bool cv::ml::StatModel::train(Mat samples, int layout, Mat responses)
+    // C++:  bool cv::ml::StatModel::train(Mat samples, int card, Mat responses)
     private static native boolean train_0(long nativeObj, long samples_nativeObj, int layout, long responses_nativeObj);
 
     // C++:  bool cv::ml::StatModel::train(Ptr_TrainData trainData, int flags = 0)

@@ -1,5 +1,6 @@
 package yearly_project.frontend.results;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
@@ -9,20 +10,28 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
+import yearly_project.frontend.Constants;
+import yearly_project.frontend.DB.Information;
+import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.waitScreen.CalculateResults;
 
 public class ResultActivity extends AppCompatActivity {
     private SectionsPageAdapter mSectionsPageAdapter;
     private FloatingActionButton fab;
     private ViewPager mViewPager;
+    private Information information;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
 
+        int ID = getIntent().getIntExtra("ID", -1);
+        information = UserInformation.getInformation(ID);
+        information.saveStateToFile();
         mSectionsPageAdapter = new SectionsPageAdapter(getSupportFragmentManager());
-        fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.home);
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.view_pager);
         setupViewPager(mViewPager);
@@ -37,7 +46,20 @@ public class ResultActivity extends AppCompatActivity {
         viewPager.setAdapter(mSectionsPageAdapter);
     }
 
-    public void OnFabClick(View view){
+    public void OnHomeClick(View view){
+        activityResult();
         finish();
+    }
+
+    private void activityResult() {
+        Intent data = new Intent(ResultActivity.this, CalculateResults.class);
+        data.putExtra("ID", information.getSerialNumber());
+        setResult(Constants.RESULT_SUCCESS,data);
+    }
+
+    @Override
+    public void onBackPressed() {
+        activityResult();
+        super.onBackPressed();
     }
 }

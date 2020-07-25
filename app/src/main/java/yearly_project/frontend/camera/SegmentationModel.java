@@ -20,9 +20,9 @@ import yearly_project.frontend.utils.Utilities;
 public class SegmentationModel {
 
     public enum eModel{
-        V2("V2","MobileNet_V2.tflite"),
-        V3_SMALL("V3-Small","MobileNet_V3_small_FLOAT.tflite"),
-        V3_LARGE("V3-Large","MobileNet_V3_large_FLOAT.tflite");
+//        V2("V2","MobileNet_V2.tflite"),
+//        V3_SMALL("V3-Small","MobileNet_V3_small_FLOAT.tflite"),
+        V3_LARGE("V3-Large","MobileNet_V3_large.tflite");
 
         private String fileName;
         public String friendlyName;

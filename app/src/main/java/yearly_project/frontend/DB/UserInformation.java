@@ -1,76 +1,82 @@
 package yearly_project.frontend.DB;
 
+import androidx.databinding.ObservableArrayMap;
+import androidx.databinding.ObservableMap;
+
 import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+
+import yearly_project.frontend.Constants;
+import yearly_project.frontend.utils.Utilities;
 
 public class UserInformation {
     private static int counter = 0;
     private static String basicPath;
-    private static Map<Integer, Information> informationMap = new HashMap<>();
-    private int serialNumber;
-    private String path;
-
-    public UserInformation() throws Exception {
-        ++counter;
-        serialNumber = counter;
-        createPath();
-        Information information = createNewInformation();
-        addInformation(serialNumber, information);
-    }
-
-    private void createPath() throws Exception {
-        setPath(basicPath + "/" + serialNumber);
-        File file = new File(path);
-        if (!file.mkdirs()) throw new Exception("Failed to create a directory in path: " + path);
-    }
+    private static ObservableMap<Integer, Information> informationMap = new ObservableArrayMap<>();
 
     private static void addInformation(int serialNumber, Information information) {
-        ++counter;
-        if(counter != serialNumber){
-
-        }
+        counter = Math.max(counter,serialNumber);
 
         informationMap.put(serialNumber, information);
     }
 
-    public static void removeInformationById(Integer ID) {
+    public static ObservableMap<Integer, Information> getInformationMap() {
+        return informationMap;
+    }
+
+    public static void removeInformation(Integer ID) {
+        informationMap.get(ID).delete();
         informationMap.remove(ID);
+    }
+
+    public static Information createNewInformation() {
+        int ID = ++counter;
+        Information information = new Information(ID, basicPath);
+        informationMap.put(ID, information);
+
+        return information;
     }
 
     public static Information getInformation(Integer ID) {
         return informationMap.get(ID);
     }
 
-    public static void loadInformation() throws IOException, IllegalAccessException {
+    public static void loadInformation() {
         File file = new File(basicPath);
-        for(File directories : Objects.requireNonNull(file.listFiles())){
-            Information information = Information.fetchObject(directories.getAbsolutePath());
-            if(information.verify()){
-                addInformation(information.getSerialNumber(), information);
+        for (File directory : Objects.requireNonNull(file.listFiles())) {
+            if (directory.isDirectory()) {
+                String detailFilePath = directory.getAbsolutePath() + "/" + Constants.STATE_FILE_NAME;
+                try {
+                    if (new File(detailFilePath).exists()) {
+                        Information information = Information.fetchObject(detailFilePath);
+                        if (information.verify()) {
+                            addInformation(information.getSerialNumber(), information);
+                        } else {
+                            throw new Exception("Invalid information directory");
+                        }
+                    }else{
+                        throw new Exception("No information file");
+                    }
+                } catch (Exception e) {
+                    Utilities.deleteFile(detailFilePath);
+                }
             }
         }
     }
 
-    public Information getInformation() {
-        return informationMap.get(serialNumber);
+    public static void setBasicPath(String basicPath) {
+        UserInformation.basicPath = basicPath;
     }
 
-    private Information createNewInformation() {
-        return new Information(serialNumber, path);
-    }
+    public static void verify(int ID) {
+        Information information = getInformation(ID);
 
-    public int getSerialNumber() {
-        return serialNumber;
-    }
-
-    public void setSerialNumber(int serialNumber) {
-        this.serialNumber = serialNumber;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
+        try {
+            if (!information.verify()) {
+                throw new Exception("Information is not valid");
+            }
+        } catch (Exception e) {
+            removeInformation(information.getSerialNumber());
+        }
     }
 }

@@ -4,39 +4,44 @@ import com.google.gson.Gson;
 
 import org.opencv.core.Mat;
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 
 import timber.log.Timber;
 import yearly_project.frontend.Constants;
+import yearly_project.frontend.utils.Utilities;
 
-public class Information {
+public class Information implements Comparable<Information> {
     private Date date;
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
     private Collection<Image> images;
-    private Collection<Result> results;
+//    private Collection<Result> results;
     private int serialNumber;
     private String path;
 
     public Information(int serialNumber, String basePath) {
         this.serialNumber = serialNumber;
         images = new LinkedList<>();
-        path = basePath + "/" + serialNumber;
+        setPath(serialNumber, basePath);
+        date =  new Date();
+        createFolder();
     }
 
-    private Information(){}
+    private void createFolder() {
+        File file = new File(path);
 
-    public Date getDate() {
-        return date;
+        file.mkdirs();
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public String getDate() {
+        return dateFormat.format(date);
     }
 
     public Collection<Image> getImages() {
@@ -50,7 +55,7 @@ public class Information {
     public static Information fetchObject(String path) throws IOException {
         Gson gson = new Gson();
 
-        return gson.fromJson(Files.readAllLines(Paths.get(path)).toString(), Information.class);
+        return gson.fromJson(new FileReader(path), Information.class);
     }
 
     public boolean verify() throws IllegalAccessException {
@@ -67,7 +72,8 @@ public class Information {
     }
 
     private boolean areArraySizesCorrect() {
-        return images.size() == Constants.AMOUNT_OF_PICTURES_TO_TAKE && results.size() >= 1;
+        return images.size() == Constants.AMOUNT_OF_PICTURES_TO_TAKE ;
+//                && results.size() >= 1;
     }
 
     private boolean verifyComposedObjects() throws IllegalAccessException {
@@ -76,9 +82,9 @@ public class Information {
 
     private boolean verifyResults() throws IllegalAccessException {
         boolean areResultsCorrect = true;
-        for (Result result : results) {
-            areResultsCorrect = areResultsCorrect && result.verify();
-        }
+//        for (Result result : results) {
+//            areResultsCorrect = areResultsCorrect && result.verify();
+//        }
 
         return areResultsCorrect;
     }
@@ -96,8 +102,12 @@ public class Information {
         return serialNumber;
     }
 
-    public void setSerialNumber(int serialNumber) {
+    private void setSerialNumber(int serialNumber) {
         this.serialNumber = serialNumber;
+    }
+
+    private void setPath(int serialNumber, String path){
+        this.path = path + "/" + serialNumber;
     }
 
     public void saveStateToFile(){
@@ -109,7 +119,16 @@ public class Information {
         }
     }
 
-//    public loadInformation(){
-//
-//    }
+    public String getPath(){
+        return this.path;
+    }
+
+    public void delete() {
+        Utilities.deleteFile(path);
+    }
+
+    @Override
+    public int compareTo(Information information) {
+        return information.date.compareTo(date);
+    }
 }

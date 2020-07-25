@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 public class Utilities {
 
@@ -101,5 +102,14 @@ public class Utilities {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void deleteFile(String path){
+        File file = new File(path);
+        if (file.isDirectory())
+            for (File child : Objects.requireNonNull(file.listFiles()))
+                deleteFile(child.getAbsolutePath());
+
+        file.delete();
     }
 }
