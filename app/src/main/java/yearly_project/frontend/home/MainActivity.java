@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 int pos = viewHolder.getAdapterPosition();
                 Information information = adapter.getInformationAt(pos);
                 UserInformation.removeInformation(information.getSerialNumber());
-                Toast.makeText(MainActivity.this, "Information number " + String.valueOf(pos + 1) + " Deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Item number " + String.valueOf(pos + 1) + " got deleted", Toast.LENGTH_SHORT).show();
             }
         }).attachToRecyclerView(recyclerView);
         adapter.setOnItemClickListener(information -> {
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setInformationCollection(List<Information> informationList) {
         informationList.sort(Information::compareTo);
-        adapter.setInformationCollection(informationList);
+        adapter.submitList(informationList);
     }
 
     private void createCallBack() {

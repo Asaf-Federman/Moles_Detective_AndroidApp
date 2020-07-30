@@ -112,7 +112,7 @@ public class Information implements Comparable<Information> {
 
     public void saveStateToFile(){
         try (FileWriter file = new FileWriter(path + "/" + Constants.STATE_FILE_NAME)) {
-            file.write(new Gson().toJson(this));
+            file.write(getJson());
             file.flush();
         } catch (IOException e) {
             Timber.i(e.getMessage());
@@ -130,5 +130,9 @@ public class Information implements Comparable<Information> {
     @Override
     public int compareTo(Information information) {
         return information.date.compareTo(date);
+    }
+
+    public String getJson(){
+        return new Gson().toJson(this);
     }
 }
