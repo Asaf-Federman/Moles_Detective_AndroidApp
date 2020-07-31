@@ -402,6 +402,4 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
         return true;
     }
-
-
 }
