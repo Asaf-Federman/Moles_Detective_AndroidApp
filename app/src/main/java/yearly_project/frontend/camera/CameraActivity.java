@@ -35,6 +35,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -250,8 +251,23 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void pasteWeights(Mat src, Mat dest) {
+        dest = createMask(dest);
         Mat mat = src.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
         Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
+    }
+
+    private Mat createMask(Mat inputMat) {
+        Mat mask = new Mat(inputMat.rows(), inputMat.cols(), CvType.CV_8UC3, Scalar.all(0));
+
+        Imgproc.circle(mask,
+                new Point(circle.getRadius(),circle.getRadius()),
+                (int) circle.getRadius(),
+                new Scalar(255, 255, 255),
+                -1,Core.LINE_AA);
+
+        Core.bitwise_and(inputMat,mask,mask);
+
+        return mask;
     }
 
     private void initialize(int posHeight, int posWidth) {

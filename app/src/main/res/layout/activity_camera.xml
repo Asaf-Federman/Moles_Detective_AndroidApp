@@ -67,8 +67,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/circle"
-        tools:srcCompat="@drawable/circle" />
+        app:srcCompat="@drawable/ic_camera"
+        tools:srcCompat="@drawable/ic_camera" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

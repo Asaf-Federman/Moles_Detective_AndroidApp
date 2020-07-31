@@ -47,6 +47,8 @@ public class SegmentationModel {
     private static final int OUTCHANNELS = 1;
     private static final int IMAGE_MEAN = 0;
     private static final float IMAGE_STD = 1;
+    private float BRIGHTNESS_SCALAR=0.5f;
+    private int direction=1;
 
     private Interpreter tflite;
     private ByteBuffer inBuffer;                          // model input buffer(uint8)
@@ -58,8 +60,8 @@ public class SegmentationModel {
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
-            gpuDelegate = new GpuDelegate();
-            tfliteOptions.addDelegate(gpuDelegate);
+//            gpuDelegate = new GpuDelegate();
+//            tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(() -> Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model"));
@@ -71,6 +73,7 @@ public class SegmentationModel {
             if (inBuffer == null) initializeInByteBuffer(length);
             if (outBuffer == null) initializeOutBuffer();
             int oLength = modelMat.height();
+            changeBrightness();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             modelMat.release();
@@ -83,6 +86,14 @@ public class SegmentationModel {
         }
 
         return modelMat;
+    }
+
+    private void changeBrightness() {
+        if(BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR<0.5){
+            direction = direction * -1;
+        }
+
+        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR +0.1f*direction;
     }
 //
 //    public Mat segmentImage(Mat modelMat, int length) {
@@ -121,7 +132,7 @@ public class SegmentationModel {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
                         double[] array = mat.get(j, k);
-                        array[1] = 255;
+                        array[1] = 255*BRIGHTNESS_SCALAR;
                         mat.put(j, k, array);
                     }
                 }
@@ -209,14 +220,14 @@ public class SegmentationModel {
         return mat;
     }
 
-    public void close() {
-        if (gpuDelegate != null) {
-            gpuDelegate.close();
-            gpuDelegate = null;
-        }
-        if (tflite != null) {
-            tflite.close();
-            tflite = null;
-        }
-    }
+//    public void close() {
+//        if (gpuDelegate != null) {
+//            gpuDelegate.close();
+//            gpuDelegate = null;
+//        }
+//        if (tflite != null) {
+//            tflite.close();
+//            tflite = null;
+//        }
+//    }
 }
