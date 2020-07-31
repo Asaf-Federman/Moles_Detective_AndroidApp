@@ -1,11 +1,9 @@
 package yearly_project.frontend.camera;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
@@ -20,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
@@ -42,10 +41,10 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
+import timber.log.Timber;
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
@@ -53,19 +52,17 @@ import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
-import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
 
 public class CameraActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private static final String TAG = "CameraActivity";
     private ImageView startButton;
     private SegmentationModel segModel;
     private SquareWrapper wrappedSquare, tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
-    private Activity activity;
+    private ImageView flash;
     private float shapesLength;
     private static final int DIM_LENGTH = 100;
     private int counter = 0;
@@ -79,13 +76,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private ImageAnalysis imageAnalysis;
     private Preview preview;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    private ImageView image;
-
+    private ImageView frontImage;
+    private Camera camera;
+    private boolean isTorchMode = false;
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
-            if (status == LoaderCallbackInterface.SUCCESS) {
-            } else {
+            if (!(status == LoaderCallbackInterface.SUCCESS)) {
                 super.onManagerConnected(status);
             }
         }
@@ -107,23 +104,12 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         setContentView(R.layout.activity_camera);
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-
         previewView = findViewById(R.id.view_finder);
-
-        activity = this;
-
-        image= findViewById(R.id.imageView);
+        frontImage = findViewById(R.id.imageView);
         information = UserInformation.createNewInformation();
         startButton = findViewById(R.id.startButton);
-        ImageView home = findViewById(R.id.home);
+        flash = findViewById(R.id.cameraFlash);
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
-
-
-        if (allPermissionsGranted()) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-        }
 
         ViewTreeObserver viewTreeObserver = previewView.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
@@ -191,10 +177,18 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         } else {
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
-        try {
-            segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (segModel == null) {
+            try {
+                segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (allPermissionsGranted()) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
     }
 
@@ -248,16 +242,15 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         Mat mask = new Mat(inputMat.rows(), inputMat.cols(), CvType.CV_8UC3, Scalar.all(0));
 
         Imgproc.circle(mask,
-                new Point(circle.getRadius(),circle.getRadius()),
+                new Point(circle.getRadius(), circle.getRadius()),
                 (int) circle.getRadius(),
                 new Scalar(255, 255, 255),
-                -1,Core.LINE_AA);
+                -1, Core.LINE_AA);
 
-        Core.bitwise_and(inputMat,mask,mask);
+        Core.bitwise_and(inputMat, mask, mask);
 
         return mask;
     }
-
 
 
     private void initialize(int posHeight, int posWidth) {
@@ -289,7 +282,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void activityResult(int result) {
-        Intent data = new Intent(activity, CalculateResults.class);
+        Intent data = new Intent(this, CalculateResults.class);
         data.putExtra("ID", information.getSerialNumber());
         setResult(result, data);
     }
@@ -308,17 +301,29 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             ProcessCameraProvider cameraProvider = null;
             try {
                 cameraProvider = cameraProviderFuture.get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
             }
 
+            assert cameraProvider != null;
             cameraProvider.unbindAll();
-            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
-            Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.SURFACE_VIEW);
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
             preview.setSurfaceProvider(previewView.createSurfaceProvider());
+            setTorch();
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void setTorch() {
+        try {
+            CameraInfo cameraInfo = camera.getCameraInfo();
+            boolean isFlashAvailable = cameraInfo.hasFlashUnit();
+            flash.setVisibility(isFlashAvailable ? View.VISIBLE : View.INVISIBLE);
+            camera.getCameraControl().enableTorch(isTorchMode);
+        } catch (Exception e) {
+            Timber.tag("INFO").w(e, "Cannot get flash available information");
+            flash.setVisibility(View.VISIBLE);
+        }
     }
 
 
@@ -341,28 +346,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
             Bitmap bitmap = Utilities.convertMatToBitMap(mat);
 
-            runOnUiThread(()->this.image.setImageBitmap(bitmap));
+            runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
 
             image.close();
         });
 
         return imageAnalysis;
     }
-
-//    private class LuminosityAnalyzer implements ImageAnalysis.Analyzer {
-//
-//        @Override
-//        public void analyze(@NonNull ImageProxy image) {
-//            final Bitmap bitmap = previewView.getBitmap();
-//            image.getImage().
-//            if(bitmap==null)
-//                return;
-//            Mat mat = new Mat();
-//            Utils.bitmapToMat(bitmap, mat);
-//            mat = onCameraFrame(mat);
-//            Utils.matToBitmap(mat, bitmap);
-//        }
-//    }
 
 //    private void updateTransform() {
 //        Matrix mx = new Matrix();
@@ -419,43 +409,26 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return true;
     }
 
-    public Mat onImageAvailable(Image image) {
+    @Override
+    protected void onPause() {
+        super.onPause();
         try {
-            if (image != null) {
-                byte[] nv21;
-                ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
-                ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
-                ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
-
-                int ySize = yBuffer.remaining();
-                int uSize = uBuffer.remaining();
-                int vSize = vBuffer.remaining();
-
-                nv21 = new byte[ySize + uSize + vSize];
-
-                //U and V are swapped
-                yBuffer.get(nv21, 0, ySize);
-                vBuffer.get(nv21, ySize, vSize);
-                uBuffer.get(nv21, ySize + vSize, uSize);
-
-                Mat mRGB = getYUV2Mat(nv21, image);
-
-                return mRGB;
-            }
-        } catch (Exception e) {
-            Log.w(TAG, e.getMessage());
-        } finally {
-            image.close();// don't forget to close
+            ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+            cameraProvider.unbindAll();
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
         }
-
-        return null;
     }
 
-    public Mat getYUV2Mat(byte[] data, Image image) {
-        Mat mYuv = new Mat(image.getHeight() + image.getHeight() / 2, image.getWidth(), CV_8UC1);
-        mYuv.put(0, 0, data);
-        Mat mRGB = new Mat();
-        cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGB_NV21, 3);
-        return mRGB;
+    public void OnTorch(View view) {
+        if (!isTorchMode) {
+            isTorchMode = true;
+            flash.setImageResource(R.drawable.ic_flash_off);
+        } else {
+            isTorchMode = false;
+            flash.setImageResource(R.drawable.ic_flash_on);
+        }
+
+        setTorch();
     }
 }
