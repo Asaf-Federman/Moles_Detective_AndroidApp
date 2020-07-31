@@ -174,7 +174,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
             return true;
         }
-
     }
 
     @Override
@@ -192,22 +191,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (segModel != null) {
-            segModel.close();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        //stop camera
-        super.onDestroy();
-        if (segModel != null) {
-            segModel.close();
-        }
-    }
     public Mat onCameraFrame(Mat mat) {
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 

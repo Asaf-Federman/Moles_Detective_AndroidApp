@@ -55,13 +55,12 @@ public class SegmentationModel {
     private int[][][] outBuffer;
     private GpuDelegate gpuDelegate;
 
-
     public SegmentationModel(final Activity activity, eModel segmentationModel) throws IOException {
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
-//            gpuDelegate = new GpuDelegate();
-//            tfliteOptions.addDelegate(gpuDelegate);
+            gpuDelegate = new GpuDelegate();
+            tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
             activity.runOnUiThread(() -> Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model"));
