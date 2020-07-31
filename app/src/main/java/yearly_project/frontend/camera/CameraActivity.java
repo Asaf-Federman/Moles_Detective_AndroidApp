@@ -5,12 +5,16 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
@@ -18,16 +22,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraX;
 import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
+import androidx.camera.core.ImageAnalysisConfig;
 import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
+import androidx.camera.core.PreviewConfig;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
-import com.google.common.util.concurrent.ListenableFuture;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -40,8 +41,9 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
@@ -69,11 +71,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private int cameraHeight;
     private int REQUEST_CODE_PERMISSIONS = 101;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
-    private PreviewView previewView;
-    private ImageView ivBitmap;
+    TextureView textureView;
+    ImageView ivBitmap;
     private ImageAnalysis imageAnalysis;
     private Preview preview;
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -100,9 +101,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-
-        previewView = findViewById(R.id.preview_view);
+        textureView = findViewById(R.id.textureView);
+        ivBitmap = findViewById(R.id.ivBitmap);
 
         activity = this;
 
@@ -118,14 +118,14 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
 
-        ViewTreeObserver viewTreeObserver = previewView.getViewTreeObserver();
+        ViewTreeObserver viewTreeObserver = textureView.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
             viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    previewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    cameraWidth = previewView.getWidth();
-                    cameraHeight = previewView.getHeight();
+                    textureView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    cameraWidth = textureView.getWidth();
+                    cameraHeight = textureView.getHeight();
                     shapesLength = Math.max(cameraHeight,cameraWidth) /3;
                     initialize(cameraHeight, cameraWidth);
                 }
@@ -212,7 +212,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         Mat mask = cutRectangle(mat);
         Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
+
         mask = segModel.segmentImage(mask, DIM_LENGTH);
+
         checkForSegmentation();
         pasteWeights(mat, mask);
 
@@ -293,90 +295,91 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @SuppressLint("RestrictedApi")
     private void startCamera() {
-
+        CameraX.unbindAll();
         preview = setPreview();
         imageAnalysis = setImageAnalysis();
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
-        cameraProviderFuture.addListener(()->{
-            ProcessCameraProvider cameraProvider = null;
-            try {
-                cameraProvider = cameraProviderFuture.get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
 
-            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
-            preview.setSurfaceProvider(previewView.createSurfaceProvider());
-            cameraProvider.bindToLifecycle(this, cameraSelector, imageAnalysis, preview);
-        },ContextCompat.getMainExecutor(this));
+        //bind to lifecycle:
+        CameraX.bindToLifecycle(this, preview, imageAnalysis);
     }
 
 
     private Preview setPreview() {
-        Size screen = new Size(previewView.getWidth(), previewView.getHeight()); //size of the screen
 
-        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
+        Size screen = new Size(textureView.getWidth(), textureView.getHeight()); //size of the screen
+
+        PreviewConfig pConfig = new PreviewConfig.Builder().setTargetResolution(screen).build();
+        Preview preview = new Preview(pConfig);
+
+        preview.setOnPreviewOutputUpdateListener(
+                output -> {
+                    ViewGroup parent = (ViewGroup) textureView.getParent();
+                    parent.removeView(textureView);
+                    parent.addView(textureView, 0);
+
+                    textureView.setSurfaceTexture(output.getSurfaceTexture());
+                    updateTransform();
+                });
 
         return preview;
     }
 
     private ImageAnalysis setImageAnalysis() {
-        // Setup image analysis pipeline that computes average pixel luminance
-        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
-        imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), new LuminosityAnalyzer());
+        ImageAnalysisConfig imageAnalysisConfig = new ImageAnalysisConfig.Builder()
+                .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
+                .setImageQueueDepth(1).build();
+
+        ImageAnalysis imageAnalysis = new ImageAnalysis(imageAnalysisConfig);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        imageAnalysis.setAnalyzer(executor,
+                (image, rotationDegrees) -> {
+                    final Bitmap bitmap = textureView.getBitmap();
+                    if(bitmap==null)
+                        return;
+
+                    AtomicReference<Mat> mat = new AtomicReference<>(new Mat());
+                    Utils.bitmapToMat(bitmap, mat.get());
+                    mat.set(onCameraFrame(mat.get()));
+                    Utils.matToBitmap(mat.get(), bitmap);
+                    runOnUiThread(()-> { ivBitmap.setImageBitmap(bitmap); });
+                });
 
         return imageAnalysis;
-
     }
 
-    private class LuminosityAnalyzer implements ImageAnalysis.Analyzer {
 
-        @Override
-        public void analyze(@NonNull ImageProxy image) {
-            final Bitmap bitmap = previewView.getBitmap();
-            image.getImage().
-            if(bitmap==null)
+    private void updateTransform() {
+        Matrix mx = new Matrix();
+        float w = textureView.getMeasuredWidth();
+        float h = textureView.getMeasuredHeight();
+
+        float cX = w / 2f;
+        float cY = h / 2f;
+
+        int rotationDgr;
+        int rotation = (int) textureView.getRotation();
+
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                rotationDgr = 0;
+                break;
+            case Surface.ROTATION_90:
+                rotationDgr = 90;
+                break;
+            case Surface.ROTATION_180:
+                rotationDgr = 180;
+                break;
+            case Surface.ROTATION_270:
+                rotationDgr = 270;
+                break;
+            default:
                 return;
-            Mat mat = new Mat();
-            Utils.bitmapToMat(bitmap, mat);
-            mat = onCameraFrame(mat);
-            Utils.matToBitmap(mat, bitmap);
         }
-    }
 
-//    private void updateTransform() {
-//        Matrix mx = new Matrix();
-//        float w = previewView.getMeasuredWidth();
-//        float h = previewView.getMeasuredHeight();
-//
-//        float cX = w / 2f;
-//        float cY = h / 2f;
-//
-//        int rotationDgr;
-//        int rotation = (int) previewView.getRotation();
-//
-//        switch (rotation) {
-//            case Surface.ROTATION_0:
-//                rotationDgr = 0;
-//                break;
-//            case Surface.ROTATION_90:
-//                rotationDgr = 90;
-//                break;
-//            case Surface.ROTATION_180:
-//                rotationDgr = 180;
-//                break;
-//            case Surface.ROTATION_270:
-//                rotationDgr = 270;
-//                break;
-//            default:
-//                return;
-//        }
-//
-//        mx.postRotate((float) rotationDgr, cX, cY);
-//        previewView.setTransform(mx);
-//    }
+        mx.postRotate((float) rotationDgr, cX, cY);
+        textureView.setTransform(mx);
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -400,4 +403,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
         return true;
     }
+
+
 }

@@ -62,12 +62,7 @@ public class SegmentationModel {
             tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model");
-                }
-            });
+            activity.runOnUiThread(() -> Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model"));
         }
     }
 
@@ -79,7 +74,10 @@ public class SegmentationModel {
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             modelMat.release();
-            tflite.run(inBuffer, outBuffer);
+            if(tflite != null){
+                tflite.run(inBuffer, outBuffer);
+            }
+
             modelMat = loadFromBufferToMat(outBuffer);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
         }
