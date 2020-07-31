@@ -5,16 +5,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.Surface;
-import android.view.TextureView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
@@ -22,13 +19,16 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraX;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageAnalysisConfig;
 import androidx.camera.core.Preview;
-import androidx.camera.core.PreviewConfig;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -42,16 +42,19 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
+import static org.opencv.core.CvType.CV_8UC1;
+import static org.opencv.imgproc.Imgproc.cvtColor;
 import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
 
 public class CameraActivity extends AppCompatActivity implements View.OnClickListener {
@@ -72,10 +75,11 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private int cameraHeight;
     private int REQUEST_CODE_PERMISSIONS = 101;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
-    TextureView textureView;
-    ImageView ivBitmap;
+    private PreviewView previewView;
     private ImageAnalysis imageAnalysis;
     private Preview preview;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private ImageView image;
 
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -102,11 +106,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        textureView = findViewById(R.id.textureView);
-        ivBitmap = findViewById(R.id.ivBitmap);
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
+        previewView = findViewById(R.id.view_finder);
 
         activity = this;
 
+        image= findViewById(R.id.imageView);
         information = UserInformation.createNewInformation();
         startButton = findViewById(R.id.startButton);
         ImageView home = findViewById(R.id.home);
@@ -119,15 +125,15 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
 
-        ViewTreeObserver viewTreeObserver = textureView.getViewTreeObserver();
+        ViewTreeObserver viewTreeObserver = previewView.getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
             viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    textureView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    cameraWidth = textureView.getWidth();
-                    cameraHeight = textureView.getHeight();
-                    shapesLength = Math.max(cameraHeight,cameraWidth) /3;
+                    previewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    cameraWidth = previewView.getWidth();
+                    cameraHeight = previewView.getHeight();
+                    shapesLength = Math.max(cameraHeight, cameraWidth) / 3;
                     initialize(cameraHeight, cameraWidth);
                 }
             });
@@ -136,7 +142,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         initializeTensorFlowModel();
     }
 
-    public void OnStartButtonClick(View view){
+    public void OnStartButtonClick(View view) {
         startButton.setClickable(false);
         AlphaAnimation animation = new AlphaAnimation(1F, 0.0F);
         animation.setDuration(2000);
@@ -174,6 +180,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
             return true;
         }
+
     }
 
     @Override
@@ -192,13 +199,11 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public Mat onCameraFrame(Mat mat) {
-        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
+        cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
         Mat mask = cutRectangle(mat);
-        Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
-
+        cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
         mask = segModel.segmentImage(mask, DIM_LENGTH);
-
         checkForSegmentation();
         pasteWeights(mat, mask);
 
@@ -229,7 +234,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private void convertMatToPicture(Mat mat) {
         Mat gray = new Mat();
-        Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
+        cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
         information.addImage(gray);
     }
 
@@ -252,6 +257,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         return mask;
     }
+
+
 
     private void initialize(int posHeight, int posWidth) {
         wrappedSquare = initializeRectangle(posHeight, posWidth);
@@ -284,101 +291,110 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private void activityResult(int result) {
         Intent data = new Intent(activity, CalculateResults.class);
         data.putExtra("ID", information.getSerialNumber());
-        setResult(result,data);
+        setResult(result, data);
     }
 
-    public void OnHomeClick(View view){
+    public void OnHomeClick(View view) {
         activityResult(Constants.RESULT_FAILURE);
         finish();
     }
 
     @SuppressLint("RestrictedApi")
     private void startCamera() {
-        CameraX.unbindAll();
         preview = setPreview();
         imageAnalysis = setImageAnalysis();
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        cameraProviderFuture.addListener(() -> {
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-        //bind to lifecycle:
-        CameraX.bindToLifecycle(this, preview, imageAnalysis);
+            cameraProvider.unbindAll();
+            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
+            Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+            preview.setSurfaceProvider(previewView.createSurfaceProvider());
+        }, ContextCompat.getMainExecutor(this));
     }
 
 
     private Preview setPreview() {
+        Size screen = new Size(previewView.getWidth(), previewView.getHeight()); //size of the screen
 
-        Size screen = new Size(textureView.getWidth(), textureView.getHeight()); //size of the screen
-
-        PreviewConfig pConfig = new PreviewConfig.Builder().setTargetResolution(screen).build();
-        Preview preview = new Preview(pConfig);
-
-        preview.setOnPreviewOutputUpdateListener(
-                output -> {
-                    ViewGroup parent = (ViewGroup) textureView.getParent();
-                    parent.removeView(textureView);
-                    parent.addView(textureView, 0);
-
-                    textureView.setSurfaceTexture(output.getSurfaceTexture());
-                    updateTransform();
-                });
+        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
 
         return preview;
     }
 
+    @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        ImageAnalysisConfig imageAnalysisConfig = new ImageAnalysisConfig.Builder()
-                .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
-                .setImageQueueDepth(1).build();
+        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+        imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), image -> {
+            Bitmap map = previewView.getBitmap();
+            Mat mat = new Mat();
+            Utils.bitmapToMat(map, mat);
+            mat = onCameraFrame(mat);
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis(imageAnalysisConfig);
+            Bitmap bitmap = Utilities.convertMatToBitMap(mat);
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        imageAnalysis.setAnalyzer(executor,
-                (image, rotationDegrees) -> {
-                    final Bitmap bitmap = textureView.getBitmap();
-                    if(bitmap==null)
-                        return;
+            runOnUiThread(()->this.image.setImageBitmap(bitmap));
 
-                    AtomicReference<Mat> mat = new AtomicReference<>(new Mat());
-                    Utils.bitmapToMat(bitmap, mat.get());
-                    mat.set(onCameraFrame(mat.get()));
-                    Utils.matToBitmap(mat.get(), bitmap);
-                    runOnUiThread(()-> { ivBitmap.setImageBitmap(bitmap); });
-                });
+            image.close();
+        });
 
         return imageAnalysis;
     }
 
+//    private class LuminosityAnalyzer implements ImageAnalysis.Analyzer {
+//
+//        @Override
+//        public void analyze(@NonNull ImageProxy image) {
+//            final Bitmap bitmap = previewView.getBitmap();
+//            image.getImage().
+//            if(bitmap==null)
+//                return;
+//            Mat mat = new Mat();
+//            Utils.bitmapToMat(bitmap, mat);
+//            mat = onCameraFrame(mat);
+//            Utils.matToBitmap(mat, bitmap);
+//        }
+//    }
 
-    private void updateTransform() {
-        Matrix mx = new Matrix();
-        float w = textureView.getMeasuredWidth();
-        float h = textureView.getMeasuredHeight();
-
-        float cX = w / 2f;
-        float cY = h / 2f;
-
-        int rotationDgr;
-        int rotation = (int) textureView.getRotation();
-
-        switch (rotation) {
-            case Surface.ROTATION_0:
-                rotationDgr = 0;
-                break;
-            case Surface.ROTATION_90:
-                rotationDgr = 90;
-                break;
-            case Surface.ROTATION_180:
-                rotationDgr = 180;
-                break;
-            case Surface.ROTATION_270:
-                rotationDgr = 270;
-                break;
-            default:
-                return;
-        }
-
-        mx.postRotate((float) rotationDgr, cX, cY);
-        textureView.setTransform(mx);
-    }
+//    private void updateTransform() {
+//        Matrix mx = new Matrix();
+//        float w = previewView.getMeasuredWidth();
+//        float h = previewView.getMeasuredHeight();
+//
+//        float cX = w / 2f;
+//        float cY = h / 2f;
+//
+//        int rotationDgr;
+//        int rotation = (int) previewView.getRotation();
+//
+//        switch (rotation) {
+//            case Surface.ROTATION_0:
+//                rotationDgr = 0;
+//                break;
+//            case Surface.ROTATION_90:
+//                rotationDgr = 90;
+//                break;
+//            case Surface.ROTATION_180:
+//                rotationDgr = 180;
+//                break;
+//            case Surface.ROTATION_270:
+//                rotationDgr = 270;
+//                break;
+//            default:
+//                return;
+//        }
+//
+//        mx.postRotate((float) rotationDgr, cX, cY);
+//        previewView.setTransform(mx);
+//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -401,5 +417,45 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             }
         }
         return true;
+    }
+
+    public Mat onImageAvailable(Image image) {
+        try {
+            if (image != null) {
+                byte[] nv21;
+                ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
+                ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
+                ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
+
+                int ySize = yBuffer.remaining();
+                int uSize = uBuffer.remaining();
+                int vSize = vBuffer.remaining();
+
+                nv21 = new byte[ySize + uSize + vSize];
+
+                //U and V are swapped
+                yBuffer.get(nv21, 0, ySize);
+                vBuffer.get(nv21, ySize, vSize);
+                uBuffer.get(nv21, ySize + vSize, uSize);
+
+                Mat mRGB = getYUV2Mat(nv21, image);
+
+                return mRGB;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, e.getMessage());
+        } finally {
+            image.close();// don't forget to close
+        }
+
+        return null;
+    }
+
+    public Mat getYUV2Mat(byte[] data, Image image) {
+        Mat mYuv = new Mat(image.getHeight() + image.getHeight() / 2, image.getWidth(), CV_8UC1);
+        mYuv.put(0, 0, data);
+        Mat mRGB = new Mat();
+        cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGB_NV21, 3);
+        return mRGB;
     }
 }
