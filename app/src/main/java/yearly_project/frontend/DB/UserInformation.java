@@ -58,7 +58,7 @@ public class UserInformation {
                         throw new Exception("No information file");
                     }
                 } catch (Exception e) {
-                    Utilities.deleteFile(detailFilePath);
+                    Utilities.deleteFile(directory.getAbsolutePath());
                 }
             }
         }

@@ -1,32 +1,48 @@
 package yearly_project.frontend.camera;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.AlphaAnimation;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
-import timber.log.Timber;
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
@@ -35,53 +51,58 @@ import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
 
-public class CameraActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
+public class CameraActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "CameraActivity";
     private ImageView startButton;
-    private CameraHolder cameraHolder;
     private SegmentationModel segModel;
-    private FlashLightController cameraFlash;
-    private SwitchCamera switchCamera;
     private SquareWrapper wrappedSquare, tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
-//    private Spinner spinner;
     private Activity activity;
-//    private boolean isSpinnerChanged = false;
     private float shapesLength;
     private static final int DIM_LENGTH = 100;
     private int counter = 0;
     private boolean isStart = false;
-    private Mat inputMat;
-    private Mat mask;
     private Information information;
-
-    static {
-        if (!OpenCVLoader.initDebug()) {
-            Timber.i("OpenCV fail to load");
-        } else {
-            Timber.i("OpenCV loaded");
-            System.loadLibrary("opencv_java3");
-        }
-    }
+    private int cameraWidth;
+    private int cameraHeight;
+    private int REQUEST_CODE_PERMISSIONS = 101;
+    private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
+    private PreviewView previewView;
+    private ImageView ivBitmap;
+    private ImageAnalysis imageAnalysis;
+    private Preview preview;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             if (status == LoaderCallbackInterface.SUCCESS) {
-                cameraHolder.getCameraView().enableView();
             } else {
                 super.onManagerConnected(status);
             }
         }
     };
+
     // ---------------------------------------------------------------------------------------------
+
+    static {
+        if (!OpenCVLoader.initDebug())
+            Log.d("ERROR", "Unable to load OpenCV");
+        else
+            Log.d("SUCCESS", "OpenCV loaded");
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
+        previewView = findViewById(R.id.preview_view);
 
         activity = this;
 
@@ -91,8 +112,26 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
 
-//        initializeSpinner();
-        initializeCamera();
+        if (allPermissionsGranted()) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+        }
+
+        ViewTreeObserver viewTreeObserver = previewView.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    previewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    cameraWidth = previewView.getWidth();
+                    cameraHeight = previewView.getHeight();
+                    shapesLength = Math.max(cameraHeight,cameraWidth) /3;
+                    initialize(cameraHeight, cameraWidth);
+                }
+            });
+        }
+
         initializeTensorFlowModel();
     }
 
@@ -105,35 +144,8 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         isStart = true;
     }
 
-//    private void initializeSpinner() {
-//        ArrayAdapter<SegmentationModel.eModel> adapter;
-//        int spinnerPosition;
-//
-//        spinner = findViewById(R.id.spinner);
-//        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, SegmentationModel.eModel.values());
-//        spinner.setAdapter(adapter);
-//        SegmentationModel.eModel model = SegmentationModel.eModel.V3_LARGE;
-//        spinnerPosition = adapter.getPosition(model);
-//        spinner.setSelection(spinnerPosition);
-//    }
-
-    private void initializeCamera() {
-        FrameLayout cameraView = findViewById(R.id.cameraLayout);
-        final ExtendedJavaCameraView cameraHandler = new ExtendedJavaCameraView(this, 0);
-
-        cameraHandler.setCvCameraViewListener(this);
-        cameraHandler.setVisibility(SurfaceView.VISIBLE);
-        cameraHandler.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        cameraView.addView(cameraHandler);
-        cameraHandler.enableView();
-        cameraHolder = new CameraHolder(cameraHandler);
-        cameraFlash = new FlashLightController((ImageView) findViewById(R.id.cameraFlash), cameraHolder, this);
-        switchCamera = new SwitchCamera((ImageView) findViewById(R.id.switchCamera), cameraHolder, this);
-    }
-
     private void initializeTensorFlowModel() {
         try {
-//            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
             segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         } catch (IOException e) {
             e.printStackTrace();
@@ -146,31 +158,10 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
         return true;
     }
 
-//    @Override
-//    protected void onStart() {
-//        super.onStart();
-//        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-//                if (isSpinnerChanged) {
-//                    try {
-//                        cameraHolder.getCameraView().disableView();
-//                        segModel.close();
-//                        segModel = new SegmentationModel(activity, (SegmentationModel.eModel) parentView.getItemAtPosition(position));
-//                        cameraHolder.getCameraView().enableView();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                } else {
-//                    isSpinnerChanged = true;
-//                }
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parentView) {
-//            }
-//        });
-//    }
+    @Override
+    public void onClick(View v) {
+
+    }
 
     private class GestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
@@ -194,7 +185,6 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
         try {
-//            segModel = new SegmentationModel(CameraActivity.this, (SegmentationModel.eModel) spinner.getSelectedItem());
             segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         } catch (IOException e) {
             e.printStackTrace();
@@ -204,8 +194,6 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     @Override
     public void onPause() {
         super.onPause();
-        if (cameraHolder.getCameraView() != null)
-            cameraHolder.getCameraView().disableView();
         if (segModel != null) {
             segModel.close();
         }
@@ -215,45 +203,23 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     protected void onDestroy() {
         //stop camera
         super.onDestroy();
-        if (cameraHolder.getCameraView() != null) {
-            cameraHolder.getCameraView().disableView();
-        }
         if (segModel != null) {
             segModel.close();
         }
     }
+    public Mat onCameraFrame(Mat mat) {
+        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
-    @Override
-    public void onCameraViewStarted(int width, int height) {
-        shapesLength = (float) Math.max(height, width) / 3;
-        initialize(height, width);
-    }
-
-    @Override
-    public void onCameraViewStopped() {
-        Timber.i("Camera view has stopped, releasing resources");
-
-        if (inputMat != null) inputMat.release();
-        if (mask != null) mask.release();
-    }
-
-    @Override
-    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        inputMat = inputFrame.rgba();
-
-        switchCamera.checkForFlip(inputMat);
-        Imgproc.cvtColor(inputMat, inputMat, Imgproc.COLOR_RGBA2RGB);
-
-        mask = cutRectangle(inputMat);
+        Mat mask = cutRectangle(mat);
         Imgproc.cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
         mask = segModel.segmentImage(mask, DIM_LENGTH);
         checkForSegmentation();
-        pasteWeights(inputMat, mask);
+        pasteWeights(mat, mask);
 
-        Imgproc.rectangle(inputMat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 2);
-        Imgproc.circle(inputMat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
+        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 2);
+        Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
 
-        return inputMat;
+        return mat;
     }
 
     private void checkForSegmentation() {
@@ -284,21 +250,6 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     private void pasteWeights(Mat src, Mat dest) {
         Mat mat = src.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
         Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
-    }
-
-    private Mat createMask(Mat inputMat) {
-        Mat mask = new Mat(inputMat.rows(), inputMat.cols(), CvType.CV_8U, Scalar.all(0));
-
-        Imgproc.circle(mask,
-                circle.getCenter(),
-                (int) circle.getRadius(),
-                new Scalar(255, 255, 255),
-                -1);
-        Mat cropped = new Mat();
-        inputMat.copyTo(cropped, mask);
-        mask.release();
-
-        return cutRectangle(cropped);
     }
 
     private void initialize(int posHeight, int posWidth) {
@@ -338,5 +289,115 @@ public class CameraActivity extends AppCompatActivity implements CameraBridgeVie
     public void OnHomeClick(View view){
         activityResult(Constants.RESULT_FAILURE);
         finish();
+    }
+
+    @SuppressLint("RestrictedApi")
+    private void startCamera() {
+
+        preview = setPreview();
+        imageAnalysis = setImageAnalysis();
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        cameraProviderFuture.addListener(()->{
+            ProcessCameraProvider cameraProvider = null;
+            try {
+                cameraProvider = cameraProviderFuture.get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
+            preview.setSurfaceProvider(previewView.createSurfaceProvider());
+            cameraProvider.bindToLifecycle(this, cameraSelector, imageAnalysis, preview);
+        },ContextCompat.getMainExecutor(this));
+    }
+
+
+    private Preview setPreview() {
+        Size screen = new Size(previewView.getWidth(), previewView.getHeight()); //size of the screen
+
+        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
+
+        return preview;
+    }
+
+    private ImageAnalysis setImageAnalysis() {
+        // Setup image analysis pipeline that computes average pixel luminance
+        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+        imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), new LuminosityAnalyzer());
+
+        return imageAnalysis;
+
+    }
+
+    private class LuminosityAnalyzer implements ImageAnalysis.Analyzer {
+
+        @Override
+        public void analyze(@NonNull ImageProxy image) {
+            final Bitmap bitmap = previewView.getBitmap();
+            image.getImage().
+            if(bitmap==null)
+                return;
+            Mat mat = new Mat();
+            Utils.bitmapToMat(bitmap, mat);
+            mat = onCameraFrame(mat);
+            Utils.matToBitmap(mat, bitmap);
+        }
+    }
+
+//    private void updateTransform() {
+//        Matrix mx = new Matrix();
+//        float w = previewView.getMeasuredWidth();
+//        float h = previewView.getMeasuredHeight();
+//
+//        float cX = w / 2f;
+//        float cY = h / 2f;
+//
+//        int rotationDgr;
+//        int rotation = (int) previewView.getRotation();
+//
+//        switch (rotation) {
+//            case Surface.ROTATION_0:
+//                rotationDgr = 0;
+//                break;
+//            case Surface.ROTATION_90:
+//                rotationDgr = 90;
+//                break;
+//            case Surface.ROTATION_180:
+//                rotationDgr = 180;
+//                break;
+//            case Surface.ROTATION_270:
+//                rotationDgr = 270;
+//                break;
+//            default:
+//                return;
+//        }
+//
+//        mx.postRotate((float) rotationDgr, cX, cY);
+//        previewView.setTransform(mx);
+//    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera();
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    private boolean allPermissionsGranted() {
+
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
     }
 }

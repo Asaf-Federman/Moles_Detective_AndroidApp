@@ -8,30 +8,25 @@
     tools:context=".camera.CameraActivity">
 
 
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <ImageView
         android:id="@+id/home"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
         android:onClick="OnHomeClick"
-        app:layout_constraintBottom_toTopOf="@+id/cameraLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_home" />
-
-    <FrameLayout
-        android:id="@+id/cameraLayout"
-        android:layout_width="403dp"
-        android:layout_height="575dp"
-        android:layout_marginTop="30dp"
-        app:layout_constraintBottom_toTopOf="@+id/cameraFlash"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-    </FrameLayout>
 
     <ImageView
         android:id="@+id/cameraFlash"
@@ -40,7 +35,6 @@
         android:layout_marginEnd="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cameraLayout"
         app:srcCompat="@drawable/ic_flash_on" />
 
     <ImageView
@@ -52,24 +46,7 @@
         app:layout_constraintEnd_toStartOf="@+id/cameraFlash"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cameraLayout"
         app:srcCompat="@drawable/ic_camera_front" />
-
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="141dp"
-        android:layout_height="26dp"
-        android:layout_marginStart="221dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="8dp"
-        android:visibility="visible"
-        android:textColor="#FFFFFF"
-        app:layout_constraintBottom_toTopOf="@+id/cameraLayout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/home"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="visible" />
 
     <ImageView
         android:id="@+id/startButton"
@@ -79,7 +56,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cameraLayout"
         app:srcCompat="@drawable/circle"
         tools:srcCompat="@drawable/circle" />
 
