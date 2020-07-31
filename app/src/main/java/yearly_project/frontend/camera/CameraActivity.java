@@ -330,9 +330,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private Preview setPreview() {
         Size screen = new Size(previewView.getWidth(), previewView.getHeight()); //size of the screen
 
-        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
-
-        return preview;
+        return new Preview.Builder().setTargetResolution(screen).build();
     }
 
     @SuppressLint("UnsafeExperimentalUsageError")
