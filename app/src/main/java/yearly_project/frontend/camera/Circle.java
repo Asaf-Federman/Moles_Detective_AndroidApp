@@ -10,7 +10,7 @@ public class Circle {
 
     public Circle(float posHeight, float posWidth, float radius) {
         center = new Point(posHeight / 2, posWidth / 2);
-        minRadius=50;
+        minRadius=75;
         setMaximumRadius(radius);
         setRadius(radius/2);
     }

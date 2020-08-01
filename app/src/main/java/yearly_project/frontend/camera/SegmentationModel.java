@@ -47,8 +47,8 @@ public class SegmentationModel {
     private static final int OUTCHANNELS = 1;
     private static final int IMAGE_MEAN = 0;
     private static final float IMAGE_STD = 1;
-    private float BRIGHTNESS_SCALAR=0.5f;
-    private int direction=1;
+    private float BRIGHTNESS_SCALAR=1f;
+    private int direction=-1;
 
     private Interpreter tflite;
     private ByteBuffer inBuffer;                          // model input buffer(uint8)
@@ -88,11 +88,11 @@ public class SegmentationModel {
     }
 
     private void changeBrightness() {
-        if(BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR<0.5){
+        if(BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR<0.7){
             direction = direction * -1;
         }
 
-        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR +0.1f*direction;
+        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR +0.15f*direction;
     }
 //
 //    public Mat segmentImage(Mat modelMat, int length) {

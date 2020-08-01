@@ -201,7 +201,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
         Mat mask = cutRectangle(mat);
-        cvtColor(mask, mask, Imgproc.COLOR_BGR2RGB);
         mask = segModel.segmentImage(mask, DIM_LENGTH);
         checkForSegmentation();
         pasteWeights(mat, mask);
@@ -269,6 +268,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         point.x = point.x - circle.getRadius();
         point.y = point.y - circle.getRadius();
         tangentSquare = new SquareWrapper((int) point.x, (int) point.y, circle.getRadius() * 2, 1);
+
         return new Mat(inputMat, tangentSquare.square).clone();
     }
 
@@ -317,7 +317,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             preview.setSurfaceProvider(previewView.createSurfaceProvider());
             setTorch();
             setFocus();
-
         }, ContextCompat.getMainExecutor(this));
     }
 
@@ -398,7 +397,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera();
