@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -94,9 +93,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     static {
         if (!OpenCVLoader.initDebug())
-            Log.d("ERROR", "Unable to load OpenCV");
+            Timber.d("Unable to load OpenCV");
         else
-            Log.d("SUCCESS", "OpenCV loaded");
+            Timber.d("OpenCV loaded");
     }
 
     private FocusUtilities focusUtilities;
@@ -322,7 +321,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private void setFocus() {
         focusUtilities.focusOnTap(previewView,camera);
-        focusUtilities.autoFocus(previewView,camera);
+//        focusUtilities.autoFocus(previewView,camera);
     }
 
     private void setTorch() {
