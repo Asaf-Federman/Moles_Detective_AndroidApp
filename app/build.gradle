@@ -20,7 +20,9 @@ android {
         }
     }
 
-    dataBinding {enabled = true }
+    buildFeatures {
+        dataBinding true
+    }
 
     allprojects {
         repositories {
@@ -45,6 +47,7 @@ dependencies {
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation project(path: ':openCVLibrary3411')
 
     def cameraxVersion = "1.0.0-beta07"
     implementation "androidx.camera:camera-core:${cameraxVersion}"
@@ -57,7 +60,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    implementation project(':openCVLibrary343')
     implementation 'org.tensorflow:tensorflow-lite:2.3.0'
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.2.0'
 
