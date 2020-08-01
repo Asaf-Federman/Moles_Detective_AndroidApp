@@ -22,6 +22,7 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
+import androidx.camera.core.TorchState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -49,6 +50,7 @@ import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.kotlin.FocusUtilities;
 import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
@@ -97,6 +99,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             Log.d("SUCCESS", "OpenCV loaded");
     }
 
+    private FocusUtilities focusUtilities;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +108,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         setContentView(R.layout.activity_camera);
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        focusUtilities = new FocusUtilities();
         previewView = findViewById(R.id.view_finder);
         frontImage = findViewById(R.id.imageView);
         information = UserInformation.createNewInformation();
@@ -201,8 +206,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         checkForSegmentation();
         pasteWeights(mat, mask);
 
-        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 2);
-        Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 2, Core.LINE_AA);
+        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
+        Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
 
         return mat;
     }
@@ -311,7 +316,14 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
             preview.setSurfaceProvider(previewView.createSurfaceProvider());
             setTorch();
+            setFocus();
+
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void setFocus() {
+        focusUtilities.focusOnTap(previewView,camera);
+        focusUtilities.autoFocus(previewView,camera);
     }
 
     private void setTorch() {
@@ -419,7 +431,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public void OnTorch(View view) {
-        if (!isTorchMode) {
+        if (camera.getCameraInfo().getTorchState().getValue() == TorchState.OFF) {
             isTorchMode = true;
             flash.setImageResource(R.drawable.ic_flash_off);
         } else {
