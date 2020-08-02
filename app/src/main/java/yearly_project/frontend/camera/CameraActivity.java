@@ -345,7 +345,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(6).build();
         imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), image -> {
             Bitmap map = previewView.getBitmap();
             Mat mat = new Mat();
