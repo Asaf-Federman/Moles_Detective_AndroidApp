@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -338,7 +339,11 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
 
     private Preview setPreview() {
-        Size screen = new Size(previewView.getWidth(), previewView.getHeight()); //size of the screen
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        int width = displayMetrics.widthPixels;
+        Size screen = new Size(width, height); //size of the screen
 
         return new Preview.Builder().setTargetResolution(screen).build();
     }
@@ -351,11 +356,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             Mat mat = new Mat();
             Utils.bitmapToMat(map, mat);
             mat = onCameraFrame(mat);
-
             Bitmap bitmap = Utilities.convertMatToBitMap(mat);
-
             runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
-
             image.close();
         });
 
