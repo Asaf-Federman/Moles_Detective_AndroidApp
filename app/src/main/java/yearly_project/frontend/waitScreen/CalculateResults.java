@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
+import timber.log.Timber;
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Image;
 import yearly_project.frontend.DB.Information;
@@ -73,7 +73,7 @@ public class CalculateResults extends AppCompatActivity {
             try {
                 params.put("mask", photo, "image/png");  // croppedFile is a FIle
                 params.setUseJsonStreamer(false);
-            } catch (FileNotFoundException e) {
+            } catch (FileNotFoundException ignored) {
             }
 
             client.post(activity, "http://" + baseUrl + "/api/analyze?dpi=" + getResources().getDisplayMetrics().densityDpi, params, new TextHttpResponseHandler() {
@@ -84,7 +84,7 @@ public class CalculateResults extends AppCompatActivity {
 
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                    Log.i("INFO", responseString);
+                    Timber.i(responseString);
                 }
 
                 @Override

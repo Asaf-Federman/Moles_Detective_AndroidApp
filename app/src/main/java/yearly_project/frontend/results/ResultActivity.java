@@ -7,7 +7,6 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import yearly_project.frontend.Constants;
@@ -18,8 +17,6 @@ import yearly_project.frontend.waitScreen.CalculateResults;
 
 public class ResultActivity extends AppCompatActivity {
     private SectionsPageAdapter mSectionsPageAdapter;
-    private FloatingActionButton fab;
-    private ViewPager mViewPager;
     private Information information;
 
     @Override
@@ -31,12 +28,11 @@ public class ResultActivity extends AppCompatActivity {
         information = UserInformation.getInformation(ID);
         information.saveStateToFile();
         mSectionsPageAdapter = new SectionsPageAdapter(getSupportFragmentManager());
-        fab = findViewById(R.id.home);
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.view_pager);
+        ViewPager mViewPager = findViewById(R.id.view_pager);
         setupViewPager(mViewPager);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
     }
 

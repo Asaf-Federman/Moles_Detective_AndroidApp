@@ -27,16 +27,4 @@ public class SquareWrapper {
     public Point getBottomRight() {
         return square.br();
     }
-
-    public Rect getSquare() {
-        return square;
-    }
-
-    public int getLength() {
-        return length;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
 }

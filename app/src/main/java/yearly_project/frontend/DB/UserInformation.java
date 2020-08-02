@@ -25,7 +25,7 @@ public class UserInformation {
     }
 
     public static void removeInformation(Integer ID) {
-        informationMap.get(ID).delete();
+        Objects.requireNonNull(informationMap.get(ID)).delete();
         informationMap.remove(ID);
         if(ID == counter) --counter;
     }

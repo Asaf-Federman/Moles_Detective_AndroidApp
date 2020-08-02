@@ -46,21 +46,20 @@ public class SegmentationModel {
     private static int DIM_WIDTH;
     private static final int INCHANNELS = 3;
     private static final int OUTCHANNELS = 1;
-    private static final int IMAGE_MEAN = 0;
-    private static final float IMAGE_STD = 1;
+//    private static final int IMAGE_MEAN = 0;
+//    private static final float IMAGE_STD = 1;
     private float BRIGHTNESS_SCALAR=1f;
     private int direction=-1;
 
     private Interpreter tflite;
     private ByteBuffer inBuffer;                          // model input buffer(uint8)
     private int[][][] outBuffer;
-    private GpuDelegate gpuDelegate;
 
-    public SegmentationModel(final Activity activity, eModel segmentationModel) throws IOException {
+    public SegmentationModel(final Activity activity, eModel segmentationModel) {
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
-            gpuDelegate = new GpuDelegate();
+            GpuDelegate gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (IOException e) {
@@ -187,10 +186,6 @@ public class SegmentationModel {
         Imgproc.cvtColor(mat,dst,Imgproc.COLOR_RGB2GRAY);
 
         return Core.countNonZero(dst) != 0;
-    }
-
-    public int[][] getResult(){
-        return outBuffer[0];
     }
 
     public Mat getSegmantation(){

@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import it.sephiroth.android.library.xtooltip.Tooltip;
 import yearly_project.frontend.R;
@@ -54,12 +55,7 @@ public class ResultFragment extends Fragment {
 
     private void setAction() {
         for(Map.Entry<View,eToolTip> entry : toolTips.entrySet()){
-            entry.getKey().setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onToolTipClick(v);
-                }
-            });
+            entry.getKey().setOnClickListener(this::onToolTipClick);
         }
     }
 
@@ -70,7 +66,7 @@ public class ResultFragment extends Fragment {
     private void showToolTip(View view) {
         eToolTip toolTip= toolTips.get(view.findViewById(view.getId()));
         Tooltip builder = new Tooltip.Builder(view.getContext()).anchor(view, 0,0,false)
-                .text(toolTip.getToolTip()).maxWidth(600)
+                .text(Objects.requireNonNull(toolTip).getToolTip()).maxWidth(600)
                 .arrow(true)
                 .showDuration(2000).styleId(R.style.ToolTipLayoutCustomStyle)
                 .overlay(false).floatingAnimation(Tooltip.Animation.Companion.getDEFAULT())

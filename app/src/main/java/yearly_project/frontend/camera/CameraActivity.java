@@ -41,7 +41,6 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
@@ -124,7 +123,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     previewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     cameraWidth = previewView.getWidth();
                     cameraHeight = previewView.getHeight();
-                    shapesLength = Math.max(cameraHeight, cameraWidth) / 3;
+                    shapesLength = Math.max(cameraHeight, cameraWidth) / 3f;
                     initialize(cameraHeight, cameraWidth);
                 }
             });
@@ -143,11 +142,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void initializeTensorFlowModel() {
-        try {
-            segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
     }
 
     @Override
@@ -183,11 +178,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
         if (segModel == null) {
-            try {
-                segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         }
 
         if (allPermissionsGranted()) {

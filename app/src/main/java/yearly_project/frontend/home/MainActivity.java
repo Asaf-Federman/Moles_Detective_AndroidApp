@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
                 int pos = viewHolder.getAdapterPosition();
                 Information information = adapter.getInformationAt(pos);
                 UserInformation.removeInformation(information.getSerialNumber());
-                Toast.makeText(MainActivity.this, "Item number " + String.valueOf(pos + 1) + " got deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Item number " + (pos + 1) + " got deleted", Toast.LENGTH_SHORT).show();
             }
         }).attachToRecyclerView(recyclerView);
         adapter.setOnItemClickListener(information -> {
@@ -122,13 +124,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void askForPermission(Integer requestCode, String... permissions) throws Exception {
+    private void askForPermission(Integer requestCode, String... permissions) {
         PermissionHandler(requestCode, permissions);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String[] permissions, int[] grantResults) {
+                                           @NotNull String[] permissions, @NotNull int[] grantResults) {
         if (requestCode == 10) {
             for (int i = 0; i < grantResults.length; ++i) {
                 switch (permissions[i]) {

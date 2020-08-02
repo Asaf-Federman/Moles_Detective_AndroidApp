@@ -1,5 +1,7 @@
 package yearly_project.frontend.DB;
 
+import android.annotation.SuppressLint;
+
 import com.google.gson.Gson;
 
 import org.opencv.core.Mat;
@@ -20,6 +22,7 @@ import yearly_project.frontend.utils.Utilities;
 
 public class Information implements Comparable<Information> {
     private Date date;
+    @SuppressLint("SimpleDateFormat")
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
     private Collection<Image> images;
 //    private Collection<Result> results;
@@ -115,7 +118,7 @@ public class Information implements Comparable<Information> {
             file.write(getJson());
             file.flush();
         } catch (IOException e) {
-            Timber.i(e.getMessage());
+            Timber.i(e);
         }
     }
 

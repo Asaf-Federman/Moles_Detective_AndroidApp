@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.media.Image;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -23,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Objects;
+
+import timber.log.Timber;
 
 import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -54,20 +55,16 @@ public class Utilities {
 
             inputStream.close();
         } catch (Throwable var13) {
-            if (fileDescriptor != null) {
-                try {
-                    fileDescriptor.close();
-                } catch (Throwable var10) {
-                    var13.addSuppressed(var10);
-                }
+            try {
+                fileDescriptor.close();
+            } catch (Throwable var10) {
+                var13.addSuppressed(var10);
             }
 
             throw var13;
         }
 
-        if (fileDescriptor != null) {
-            fileDescriptor.close();
-        }
+        fileDescriptor.close();
 
         return var9;
     }
@@ -88,7 +85,7 @@ public class Utilities {
             bmp = Bitmap.createBitmap(input.cols(), input.rows(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(input, bmp);
         } catch (CvException e) {
-            Log.d("Exception", e.getMessage());
+            Timber.d(e);
         }
 
         return bmp;
@@ -99,7 +96,7 @@ public class Utilities {
         if (!dir.exists())
             dir.mkdirs();
         File file = new File(dir, filename + ".png");
-        FileOutputStream fOut = null;
+        FileOutputStream fOut;
         try {
             fOut = new FileOutputStream(file);
             bmp.compress(Bitmap.CompressFormat.PNG, 85, fOut);
@@ -138,12 +135,11 @@ public class Utilities {
                 vBuffer.get(nv21, ySize, vSize);
                 uBuffer.get(nv21, ySize + vSize, uSize);
 
-                Mat mRGB = getYUV2Mat(nv21, image);
-
-                return mRGB;
+                return getYUV2Mat(nv21, image);
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         } finally {
+            assert image != null;
             image.close();// don't forget to close
         }
 

@@ -20,33 +20,15 @@ public class Circle {
     }
 
     public void setRadius(float radius) {
-        if(radius > maximumRadius){
-            this.radius=maximumRadius;
-        }else if(radius < minRadius){
-            this.radius = minRadius;
-        }else{
-            this.radius = radius;
-        }
+        this.radius = radius>maximumRadius ? maximumRadius : Math.max(radius, minRadius);
     }
 
     public Point getCenter() {
         return center;
     }
 
-    public void setCenter(Point center) {
-        this.center = center;
-    }
-
-    public float getMaximumRadius() {
-        return maximumRadius;
-    }
-
     public void setMaximumRadius(float maximumRadius) {
-        if(maximumRadius < minRadius){
-            this.maximumRadius = minRadius;
-        }else{
-            this.maximumRadius = maximumRadius;
-        }
+        this.maximumRadius = Math.max(maximumRadius, minRadius);
     }
 
     public void scale(float mScaleFactor) {
