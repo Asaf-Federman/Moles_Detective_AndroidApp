@@ -14,7 +14,6 @@ import com.loopj.android.http.TextHttpResponseHandler;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 import timber.log.Timber;
@@ -28,7 +27,7 @@ public class CalculateResults extends AppCompatActivity {
     private Information information;
     private Context activity;
     private String baseUrl = "34.105.175.145";
-    private volatile int semaphore;
+    private volatile int counter;
     private Handler mainHandler;
     AsyncHttpClient client;
 
@@ -47,23 +46,10 @@ public class CalculateResults extends AppCompatActivity {
             mainHandler = new Handler(Looper.getMainLooper());
             client = new AsyncHttpClient();
             client.setMaxRetriesAndTimeout(10, 1000);
-            semaphore = information.getImages().size();
+            counter = information.getImages().size();
             for (Image image : information.getImages()) {
                 asyncTask(new File(image.getPath()));
             }
-
-            while (semaphore>0){
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            runOnUiThread(()->{
-                activityResult(Constants.RESULT_SUCCESS);
-                finish();
-            });
         }).start();
     }
 
@@ -99,7 +85,17 @@ public class CalculateResults extends AppCompatActivity {
     }
 
     private synchronized void onTaskCompleted(){
-        --semaphore;
+        --counter;
+        if(counter == 0){
+            finishTask();
+        }
+    }
+
+    private void finishTask() {
+        runOnUiThread(()->{
+            activityResult(Constants.RESULT_SUCCESS);
+            finish();
+        });
     }
 
     private void activityResult(int result) {
