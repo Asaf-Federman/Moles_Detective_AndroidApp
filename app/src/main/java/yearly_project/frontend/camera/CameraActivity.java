@@ -202,7 +202,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         Mat mask = cutRectangle(mat);
         mask = segModel.segmentImage(mask, DIM_LENGTH);
-        checkForSegmentation();
+        checkForSegmentation(mask);
         pasteWeights(mat, mask);
 
         Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
@@ -211,8 +211,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return mat;
     }
 
-    private void checkForSegmentation() {
-        if (segModel.isSegmentationSuccessful() && isStart) {
+    private void checkForSegmentation(Mat matToCheck) {
+        if (segModel.isSegmentationSuccessful(matToCheck) && isStart) {
             if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
                 final Mat mat = segModel.getSegmantation();
                 new Thread(() -> convertMatToPicture(mat)).start();

@@ -3,6 +3,7 @@ package yearly_project.frontend.camera;
 import android.app.Activity;
 
 import org.jetbrains.annotations.NotNull;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
@@ -181,18 +182,11 @@ public class SegmentationModel {
         }
     }
 
-    public boolean isSegmentationSuccessful(){
-        for (int i = 0; i < 1; i++) {
-            for (int j = 0; j < DIM_HEIGHT; j++) {
-                for (int k = 0; k < DIM_WIDTH; k++) {
-                    if (outBuffer[i][j][k] != 0) {
-                        return true;
-                    }
-                }
-            }
-        }
+    public boolean isSegmentationSuccessful(Mat mat){
+        Mat dst = new Mat();
+        Imgproc.cvtColor(mat,dst,Imgproc.COLOR_RGB2GRAY);
 
-        return false;
+        return Core.countNonZero(dst) != 0;
     }
 
     public int[][] getResult(){
