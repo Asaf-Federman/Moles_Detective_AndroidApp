@@ -55,27 +55,27 @@ class FocusUtilities {
         }
     }
 
-//    fun autoFocus(previewView: PreviewView, camera: Camera){
-//        previewView.afterMeasured {
-//            val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
-//                    previewView.width.toFloat(), previewView.height.toFloat())
-//            val centerWidth = previewView.width.toFloat() / 2
-//            val centerHeight = previewView.height.toFloat() / 2
-//            //create a point on the center of the view
-//            val autoFocusPoint = factory.createPoint(centerWidth, centerHeight)
-//            try {
-//                camera.cameraControl.startFocusAndMetering(
-//                        FocusMeteringAction.Builder(
-//                                autoFocusPoint,
-//                                FocusMeteringAction.FLAG_AF
-//                        ).apply {
-//                            //auto-focus every 1 seconds
-//                            setAutoCancelDuration(1, TimeUnit.SECONDS)
-//                        }.build()
-//                )
-//            } catch (e: CameraInfoUnavailableException) {
-//                Log.d("ERROR", "cannot access camera", e)
-//            }
-//        }
-//    }
+    fun autoFocus(previewView: PreviewView, camera: Camera){
+        previewView.afterMeasured {
+            val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
+                    previewView.width.toFloat(), previewView.height.toFloat())
+            val centerWidth = previewView.width.toFloat() / 2
+            val centerHeight = previewView.height.toFloat() / 2
+            //create a point on the center of the view
+            val autoFocusPoint = factory.createPoint(centerWidth, centerHeight)
+            try {
+                camera.cameraControl.startFocusAndMetering(
+                        FocusMeteringAction.Builder(
+                                autoFocusPoint,
+                                FocusMeteringAction.FLAG_AF
+                        ).apply {
+                            //auto-focus every 1 seconds
+                            setAutoCancelDuration(1, TimeUnit.SECONDS)
+                        }.build()
+                )
+            } catch (e: CameraInfoUnavailableException) {
+                Log.d("ERROR", "cannot access camera", e)
+            }
+        }
+    }
 }
