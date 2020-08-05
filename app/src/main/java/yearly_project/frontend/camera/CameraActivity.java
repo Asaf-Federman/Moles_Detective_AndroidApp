@@ -125,7 +125,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     cameraHeight = previewView.getHeight();
                     shapesLength = Math.max(cameraHeight, cameraWidth) / 3f;
                     initialize(cameraHeight, cameraWidth);
-//                    setFocus();
                 }
             });
         }
@@ -313,7 +312,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void setFocus() {
-        focusUtilities.focusOnTap(previewView,camera);
+//        focusUtilities.focusOnTap(previewView,camera);
         focusUtilities.autoFocus(previewView,camera);
     }
 

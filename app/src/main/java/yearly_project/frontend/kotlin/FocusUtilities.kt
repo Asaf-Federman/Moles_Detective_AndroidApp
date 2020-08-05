@@ -69,8 +69,8 @@ class FocusUtilities {
                                 autoFocusPoint,
                                 FocusMeteringAction.FLAG_AF
                         ).apply {
-                            //auto-focus every 1 seconds
-                            setAutoCancelDuration(1, TimeUnit.SECONDS)
+                            //auto-focus every half a second
+                            setAutoCancelDuration(500, TimeUnit.MILLISECONDS)
                         }.build()
                 )
             } catch (e: CameraInfoUnavailableException) {
