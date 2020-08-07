@@ -60,12 +60,11 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private ImageView startButton;
     private SegmentationModel segModel;
-    private SquareWrapper wrappedSquare, tangentSquare;
+    private SquareWrapper tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
     private ImageView flash;
     private float shapesLength;
-    private static final int DIM_LENGTH = 100;
     private int counter = 0;
     private boolean isStart = false;
     private Information information;
@@ -192,25 +191,28 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
         Mat mask = cutRectangle(mat);
-        mask = segModel.segmentImage(mask, DIM_LENGTH);
+        mask = segModel.segmentImage(mask);
         checkForSegmentation(mask);
         pasteWeights(mat, mask);
 
-        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
+//        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
         Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
 
         return mat;
     }
 
     private void checkForSegmentation(Mat matToCheck) {
-        if (segModel.isSegmentationSuccessful(matToCheck) && isStart) {
-            if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
-                final Mat mat = segModel.getSegmantation();
-                new Thread(() -> convertMatToPicture(mat)).start();
-            }
+        if (isStart) {
+            if (segModel.isSegmentationSuccessful(matToCheck)) {
+                if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
+                    final Mat mat = segModel.getSegmentation();
+                    new Thread(() -> convertMatToPicture(mat)).start();
+                }
 
-            ++counter;
+                ++counter;
+            }
         }
+
 
         if (counter == 10) {
             isStart = false;
@@ -249,7 +251,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
 
     private void initialize(int posHeight, int posWidth) {
-        wrappedSquare = initializeRectangle(posHeight, posWidth);
+//        wrappedSquare = initializeRectangle(posHeight, posWidth);
         circle = initializeCircle(posHeight, posWidth);
     }
 
@@ -267,9 +269,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return new Circle(posWidth, posHeight, shapesLength / 2 - 5);
     }
 
-    private SquareWrapper initializeRectangle(int posHeight, int posWidth) {
-        return new SquareWrapper(posWidth, posHeight, shapesLength);
-    }
+//    private SquareWrapper initializeRectangle(int posHeight, int posWidth) {
+//        return new SquareWrapper(posWidth, posHeight, shapesLength);
+//    }
 
     @Override
     public void onBackPressed() {
@@ -313,7 +315,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private void setFocus() {
 //        focusUtilities.focusOnTap(previewView,camera);
-        focusUtilities.autoFocus(previewView,camera);
+        focusUtilities.autoFocus(previewView, camera);
     }
 
     private void setTorch() {

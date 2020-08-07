@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import yearly_project.frontend.Constants;
 import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
@@ -26,16 +27,16 @@ public class SegmentationModel {
         V3_LARGE("V3-Large","MobileNet_V3_large.tflite");
 
         private String fileName;
-        public String friendlyName;
+        public String key;
 
-        eModel(String friendlyName, String fileName){
+        eModel(String key, String fileName){
             this.fileName = fileName;
-            this.friendlyName=friendlyName;
+            this.key = key;
         }
 
         @NotNull
         @Override public String toString(){
-            return friendlyName;
+            return key;
         }
     }
 
@@ -56,6 +57,9 @@ public class SegmentationModel {
     private int[][][] outBuffer;
 
     public SegmentationModel(final Activity activity, eModel segmentationModel) {
+        if (inBuffer == null) initializeInByteBuffer();
+        if (outBuffer == null) initializeOutBuffer();
+
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         try {
             tfliteOptions.setNumThreads(4);
@@ -67,18 +71,14 @@ public class SegmentationModel {
         }
     }
 
-    public Mat segmentImage(Mat modelMat, int length) {
+    public Mat segmentImage(Mat modelMat) {
         if (tflite != null) {
-            if (inBuffer == null) initializeInByteBuffer(length);
-            if (outBuffer == null) initializeOutBuffer();
             int oLength = modelMat.height();
             changeBrightness();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             modelMat.release();
-            if(tflite != null){
-                tflite.run(inBuffer, outBuffer);
-            }
+            tflite.run(inBuffer, outBuffer);
 
             modelMat = loadFromBufferToMat(outBuffer);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
@@ -147,9 +147,9 @@ public class SegmentationModel {
 //        outImg = new long[DIM_BATCH_SIZE][DIM_WIDTH * DIM_HEIGHT * OUTCHANNELS];
     }
 
-    private void initializeInByteBuffer(int length) {
-        DIM_HEIGHT = length;
-        DIM_WIDTH = length;
+    private void initializeInByteBuffer() {
+        DIM_HEIGHT = Constants.DIM_LENGTH;
+        DIM_WIDTH = Constants.DIM_LENGTH;
         inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
         inBuffer.order(ByteOrder.nativeOrder());
     }
@@ -188,7 +188,7 @@ public class SegmentationModel {
         return Core.countNonZero(dst) != 0;
     }
 
-    public Mat getSegmantation(){
+    public Mat getSegmentation(){
         Mat mat  = new Mat(DIM_WIDTH,DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
 
         for (int i = 0; i < 1; i++) {

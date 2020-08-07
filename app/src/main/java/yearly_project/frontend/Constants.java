@@ -8,4 +8,5 @@ public class Constants {
     public final static int ON_CAMERA = 3;
     public final static int ON_WAIT_SCREEN = 4;
     public final static int ON_RESULT = 5;
+    public static final int DIM_LENGTH = 100;
 }
