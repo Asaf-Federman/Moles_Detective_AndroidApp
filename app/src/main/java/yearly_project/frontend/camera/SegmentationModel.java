@@ -12,30 +12,31 @@ import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import timber.log.Timber;
 import yearly_project.frontend.Constants;
 import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
 
-    public enum eModel{
-//        V2("V2","MobileNet_V2.tflite"),
+    public enum eModel {
+        //        V2("V2","MobileNet_V2.tflite"),
 //        V3_SMALL("V3-Small","MobileNet_V3_small_FLOAT.tflite"),
-        V3_LARGE("V3-Large","MobileNet_V3_large.tflite");
+        V3_LARGE("V3-Large", "MobileNet_V3_large.tflite");
 
         private String fileName;
         public String key;
 
-        eModel(String key, String fileName){
+        eModel(String key, String fileName) {
             this.fileName = fileName;
             this.key = key;
         }
 
         @NotNull
-        @Override public String toString(){
+        @Override
+        public String toString() {
             return key;
         }
     }
@@ -47,10 +48,10 @@ public class SegmentationModel {
     private static int DIM_WIDTH;
     private static final int INCHANNELS = 3;
     private static final int OUTCHANNELS = 1;
-//    private static final int IMAGE_MEAN = 0;
+    //    private static final int IMAGE_MEAN = 0;
 //    private static final float IMAGE_STD = 1;
-    private float BRIGHTNESS_SCALAR=1f;
-    private int direction=-1;
+    private float BRIGHTNESS_SCALAR = 1f;
+    private int direction = -1;
 
     private Interpreter tflite;
     private ByteBuffer inBuffer;                          // model input buffer(uint8)
@@ -59,15 +60,42 @@ public class SegmentationModel {
     public SegmentationModel(final Activity activity, eModel segmentationModel) {
         if (inBuffer == null) initializeInByteBuffer();
         if (outBuffer == null) initializeOutBuffer();
+        loadTflite(activity, segmentationModel);
+    }
 
-        Interpreter.Options tfliteOptions = new Interpreter.Options();
+    private void loadTflite(final Activity activity, eModel segmentationModel) {
+//        try {
+//            if (VERSION.SDK_INT >= VERSION_CODES.P) {
+//                Interpreter.Options tfliteOptions = new Interpreter.Options();
+//                tfliteOptions.setNumThreads(4);
+//                NnApiDelegate nnApiDelegate = new NnApiDelegate();
+//                tfliteOptions.addDelegate(nnApiDelegate);
+//                tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
+//
+//                return;
+//            }
+//        } catch (Exception e) {
+//            Timber.i("Failed to load nnApiDelegate");
+//        }
+
         try {
-            tfliteOptions.setNumThreads(4);
+            Interpreter.Options tfliteOptions = new Interpreter.Options();
+            tfliteOptions.setNumThreads(8);
             GpuDelegate gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
-        } catch (IOException e) {
-            activity.runOnUiThread(() -> Utilities.createAlertDialog(activity,"Error", "Failed to load segmentation model"));
+
+            return;
+        } catch (Exception e) {
+            Timber.i("Failed to load GpuDelegate");
+        }
+
+        try {
+            Interpreter.Options tfliteOptions = new Interpreter.Options();
+            tfliteOptions.setNumThreads(4);
+            tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
+        } catch (Exception e) {
+            activity.runOnUiThread(() -> Utilities.createAlertDialog(activity, "Error", "Failed to load segmentation model"));
         }
     }
 
@@ -77,7 +105,6 @@ public class SegmentationModel {
             changeBrightness();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
-            modelMat.release();
             tflite.run(inBuffer, outBuffer);
 
             modelMat = loadFromBufferToMat(outBuffer);
@@ -88,11 +115,11 @@ public class SegmentationModel {
     }
 
     private void changeBrightness() {
-        if(BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR<0.7){
+        if (BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR < 0.7) {
             direction = direction * -1;
         }
 
-        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR +0.15f*direction;
+        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR + 0.15f * direction;
     }
 //
 //    public Mat segmentImage(Mat modelMat, int length) {
@@ -131,7 +158,7 @@ public class SegmentationModel {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
                         double[] array = mat.get(j, k);
-                        array[1] = 255*BRIGHTNESS_SCALAR;
+                        array[1] = 255 * BRIGHTNESS_SCALAR;
                         mat.put(j, k, array);
                     }
                 }
@@ -181,24 +208,24 @@ public class SegmentationModel {
         }
     }
 
-    public boolean isSegmentationSuccessful(Mat mat){
+    public boolean isSegmentationSuccessful(Mat mat) {
         Mat dst = new Mat();
-        Imgproc.cvtColor(mat,dst,Imgproc.COLOR_RGB2GRAY);
+        Imgproc.cvtColor(mat, dst, Imgproc.COLOR_RGB2GRAY);
 
         return Core.countNonZero(dst) != 0;
     }
 
-    public Mat getSegmentation(){
-        Mat mat  = new Mat(DIM_WIDTH,DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
+    public Mat getSegmentation() {
+        Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
 
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < DIM_HEIGHT; j++) {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outBuffer[i][j][k] != 0) {
-                        double[] pixel = mat.get(j,k);
-                        pixel[0]=255;
-                        pixel[1]=255;
-                        pixel[2]=255;
+                        double[] pixel = mat.get(j, k);
+                        pixel[0] = 255;
+                        pixel[1] = 255;
+                        pixel[2] = 255;
                         mat.put(j, k, pixel);
                     }
                 }

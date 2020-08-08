@@ -42,6 +42,7 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import timber.log.Timber;
@@ -98,6 +99,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private FocusUtilities focusUtilities;
+    private ExecutorService executor;
 
 
     @Override
@@ -105,6 +107,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
+        executor = Executors.newSingleThreadExecutor();
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         focusUtilities = new FocusUtilities();
         previewView = findViewById(R.id.view_finder);
@@ -188,12 +191,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public Mat onCameraFrame(Mat mat) {
+        Mat rectangle, segmentImage;
         cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
-        Mat mask = cutRectangle(mat);
-        mask = segModel.segmentImage(mask);
-        checkForSegmentation(mask);
-        pasteWeights(mat, mask);
+        rectangle = cutRectangle(mat);
+        segmentImage = segModel.segmentImage(rectangle);
+        checkForSegmentation(segmentImage);
+        pasteWeights(mat, segmentImage);
 
 //        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
         Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
@@ -309,13 +313,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
             preview.setSurfaceProvider(previewView.createSurfaceProvider());
             setTorch();
-            setFocus();
         }, ContextCompat.getMainExecutor(this));
-    }
-
-    private void setFocus() {
-//        focusUtilities.focusOnTap(previewView,camera);
-        focusUtilities.autoFocus(previewView, camera);
     }
 
     private void setTorch() {
@@ -343,14 +341,18 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        imageAnalysis = new ImageAnalysis.Builder().setImageQueueDepth(6).build();
-        imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), image -> {
+        ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
+        imageAnalysis = builder.build();
+
+        imageAnalysis.setAnalyzer(executor, image -> {
             Bitmap map = previewView.getBitmap();
-            Mat mat = new Mat();
-            Utils.bitmapToMat(map, mat);
-            mat = onCameraFrame(mat);
-            Bitmap bitmap = Utilities.convertMatToBitMap(mat);
+            Mat src = new Mat();
+            Mat dst;
+            Utils.bitmapToMat(map, src);
+            dst = onCameraFrame(src);
+            Bitmap bitmap = Utilities.convertMatToBitMap(dst);
             runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
+
             image.close();
         });
 
