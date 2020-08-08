@@ -1,4 +1,4 @@
-package yearly_project.frontend.kotlin
+package yearly_project.frontend.focusUtilities
 
 import android.annotation.SuppressLint
 import android.util.Log

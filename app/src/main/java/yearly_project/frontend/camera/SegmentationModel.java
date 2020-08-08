@@ -3,7 +3,6 @@ package yearly_project.frontend.camera;
 import android.app.Activity;
 
 import org.jetbrains.annotations.NotNull;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
@@ -48,6 +47,7 @@ public class SegmentationModel {
     private static final int OUTCHANNELS = 1;
     private float BRIGHTNESS_SCALAR = 1f;
     private int direction = -1;
+    private boolean isSuccessful;
 
     private Interpreter tflite;
     private ByteBuffer inBuffer;                          // model input buffer(uint8)
@@ -60,25 +60,9 @@ public class SegmentationModel {
     }
 
     private void loadTflite(final Activity activity, eModel segmentationModel) {
-//        try {
-//            if (VERSION.SDK_INT >= VERSION_CODES.P) {
-//                Interpreter.Options tfliteOptions = new Interpreter.Options();
-//                tfliteOptions.setNumThreads(4);
-//                NnApiDelegate nnApiDelegate = new NnApiDelegate();
-//                tfliteOptions.addDelegate(nnApiDelegate);
-//                tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
-//
-//                return;
-//            }
-//        } catch (Exception e) {
-//            Timber.i("Failed to load nnApiDelegate");
-//        }
-
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tfliteOptions.setNumThreads(2);
-            GpuDelegate gpuDelegate = new GpuDelegate();
-            tfliteOptions.addDelegate(gpuDelegate);
+            tfliteOptions.addDelegate(new GpuDelegate());
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
 
             return;
@@ -148,10 +132,12 @@ public class SegmentationModel {
     private Mat loadFromBufferToMat(int[][][] outImg) {
         Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
 
+        isSuccessful = false;
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < DIM_HEIGHT; j++) {
                 for (int k = 0; k < DIM_WIDTH; k++) {
                     if (outImg[i][j][k] != 0) {
+                        isSuccessful = true;
                         double[] array = mat.get(j, k);
                         array[1] = 255 * BRIGHTNESS_SCALAR;
                         mat.put(j, k, array);
@@ -193,21 +179,18 @@ public class SegmentationModel {
 
     private void loadMatToBuffer(Mat mat) {
         inBuffer.rewind();
-        for (int i = 0; i < DIM_HEIGHT; ++i) {
-            for (int j = 0; j < DIM_WIDTH; ++j) {
-                double[] pixel = mat.get(i, j);
-                inBuffer.put((byte) pixel[0]);
-                inBuffer.put((byte) pixel[1]);
-                inBuffer.put((byte) pixel[2]);
-            }
-        }
+        byte[] data = new byte[DIM_WIDTH * DIM_HEIGHT * INCHANNELS];
+        mat.get(0, 0, data);
+        inBuffer = ByteBuffer.wrap(data);
     }
 
-    public boolean isSegmentationSuccessful(Mat mat) {
-        Mat dst = new Mat();
-        Imgproc.cvtColor(mat, dst, Imgproc.COLOR_RGB2GRAY);
+    public boolean isSegmentationSuccessful() {
+//        Mat dst = new Mat();
+//        Imgproc.cvtColor(mat, dst, Imgproc.COLOR_RGB2GRAY);
+//
+//        return Core.countNonZero(dst) != 0;
 
-        return Core.countNonZero(dst) != 0;
+        return isSuccessful;
     }
 
     public Mat getSegmentation() {

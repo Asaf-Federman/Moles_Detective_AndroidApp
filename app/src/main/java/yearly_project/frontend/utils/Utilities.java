@@ -116,7 +116,7 @@ public class Utilities {
         file.delete();
     }
 
-    public Mat onImageAvailable(Image image) {
+    public static Mat onImageAvailable(Image image) {
         try {
             if (image != null) {
                 byte[] nv21;
@@ -146,7 +146,7 @@ public class Utilities {
         return null;
     }
 
-    public Mat getYUV2Mat(byte[] data, Image image) {
+    public static Mat getYUV2Mat(byte[] data, Image image) {
         Mat mYuv = new Mat(image.getHeight() + image.getHeight() / 2, image.getWidth(), CV_8UC1);
         mYuv.put(0, 0, data);
         Mat mRGB = new Mat();

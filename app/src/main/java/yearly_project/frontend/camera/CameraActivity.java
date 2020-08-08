@@ -52,7 +52,6 @@ import yearly_project.frontend.Constants;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
-import yearly_project.frontend.kotlin.FocusUtilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -99,7 +98,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             Timber.d("OpenCV loaded");
     }
 
-    private FocusUtilities focusUtilities;
     private ExecutorService executor;
 
 
@@ -108,9 +106,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        executor = Executors.newSingleThreadExecutor();
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        focusUtilities = new FocusUtilities();
+        executor = Executors.newSingleThreadExecutor();
         previewView = findViewById(R.id.view_finder);
         frontImage = findViewById(R.id.imageView);
         information = UserInformation.createNewInformation();
@@ -197,7 +194,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         rectangle = cutRectangle(mat);
         segmentImage = segModel.segmentImage(rectangle);
-        checkForSegmentation(segmentImage);
+        checkForSegmentation();
         pasteWeights(mat, segmentImage);
 
 //        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
@@ -206,9 +203,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return mat;
     }
 
-    private void checkForSegmentation(Mat matToCheck) {
+    private void checkForSegmentation() {
         if (isStart) {
-            if (segModel.isSegmentationSuccessful(matToCheck)) {
+            if (segModel.isSegmentationSuccessful()) {
                 if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
                     final Mat mat = segModel.getSegmentation();
                     new Thread(() -> convertMatToPicture(mat)).start();
@@ -216,15 +213,14 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
                 ++counter;
             }
-        }
 
-
-        if (counter == 10) {
-            isStart = false;
-            runOnUiThread(() -> {
-                activityResult(Constants.RESULT_SUCCESS);
-                finish();
-            });
+            if (counter == 10) {
+                isStart = false;
+                runOnUiThread(() -> {
+                    activityResult(Constants.RESULT_SUCCESS);
+                    finish();
+                });
+            }
         }
     }
 
@@ -296,10 +292,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @SuppressLint("RestrictedApi")
-    private void startCamera() {
-        preview = setPreview();
-        imageAnalysis = setImageAnalysis();
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+    private void startCamera()
+    {
         cameraProviderFuture.addListener(() -> {
             ProcessCameraProvider cameraProvider = null;
             try {
@@ -308,6 +302,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                 e.printStackTrace();
             }
 
+            preview = setPreview();
+            imageAnalysis = setImageAnalysis();
+            CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
             assert cameraProvider != null;
             cameraProvider.unbindAll();
             this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.SURFACE_VIEW);
@@ -351,13 +348,17 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         final long[] lastFpsTimestamp = {System.currentTimeMillis()};
 
         imageAnalysis.setAnalyzer(executor, image -> {
-            Bitmap map = previewView.getBitmap();
+            Bitmap bitmap = previewView.getBitmap();
+            if(bitmap==null)
+                return;
+
             Mat src = new Mat();
             Mat dst;
-            Utils.bitmapToMat(map, src);
+
+            Utils.bitmapToMat(bitmap, src);
             dst = onCameraFrame(src);
-            Utils.matToBitmap(dst,map);
-            runOnUiThread(() -> this.frontImage.setImageBitmap(map));
+            Utils.matToBitmap(dst,bitmap);
+            runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
 
             int frameCount = 10;
             if (frameCounter[0].incrementAndGet() % frameCount == 0) {
@@ -374,38 +375,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         return imageAnalysis;
     }
-
-//    private void updateTransform() {
-//        Matrix mx = new Matrix();
-//        float w = previewView.getMeasuredWidth();
-//        float h = previewView.getMeasuredHeight();
-//
-//        float cX = w / 2f;
-//        float cY = h / 2f;
-//
-//        int rotationDgr;
-//        int rotation = (int) previewView.getRotation();
-//
-//        switch (rotation) {
-//            case Surface.ROTATION_0:
-//                rotationDgr = 0;
-//                break;
-//            case Surface.ROTATION_90:
-//                rotationDgr = 90;
-//                break;
-//            case Surface.ROTATION_180:
-//                rotationDgr = 180;
-//                break;
-//            case Surface.ROTATION_270:
-//                rotationDgr = 270;
-//                break;
-//            default:
-//                return;
-//        }
-//
-//        mx.postRotate((float) rotationDgr, cX, cY);
-//        previewView.setTransform(mx);
-//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
