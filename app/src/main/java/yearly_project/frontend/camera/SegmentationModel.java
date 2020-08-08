@@ -22,8 +22,6 @@ import yearly_project.frontend.utils.Utilities;
 public class SegmentationModel {
 
     public enum eModel {
-        //        V2("V2","MobileNet_V2.tflite"),
-//        V3_SMALL("V3-Small","MobileNet_V3_small_FLOAT.tflite"),
         V3_LARGE("V3-Large", "MobileNet_V3_large.tflite");
 
         private String fileName;
@@ -48,8 +46,6 @@ public class SegmentationModel {
     private static int DIM_WIDTH;
     private static final int INCHANNELS = 3;
     private static final int OUTCHANNELS = 1;
-    //    private static final int IMAGE_MEAN = 0;
-//    private static final float IMAGE_STD = 1;
     private float BRIGHTNESS_SCALAR = 1f;
     private int direction = -1;
 
@@ -58,8 +54,8 @@ public class SegmentationModel {
     private int[][][] outBuffer;
 
     public SegmentationModel(final Activity activity, eModel segmentationModel) {
-        if (inBuffer == null) initializeInByteBuffer();
-        if (outBuffer == null) initializeOutBuffer();
+        initializeInByteBuffer();
+        initializeOutBuffer();
         loadTflite(activity, segmentationModel);
     }
 
@@ -80,7 +76,7 @@ public class SegmentationModel {
 
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tfliteOptions.setNumThreads(8);
+            tfliteOptions.setNumThreads(2);
             GpuDelegate gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
@@ -92,7 +88,6 @@ public class SegmentationModel {
 
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tfliteOptions.setNumThreads(4);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (Exception e) {
             activity.runOnUiThread(() -> Utilities.createAlertDialog(activity, "Error", "Failed to load segmentation model"));

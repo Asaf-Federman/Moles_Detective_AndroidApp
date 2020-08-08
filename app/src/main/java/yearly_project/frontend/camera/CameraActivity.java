@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -44,6 +45,7 @@ import org.opencv.imgproc.Imgproc;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import timber.log.Timber;
 import yearly_project.frontend.Constants;
@@ -51,7 +53,6 @@ import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
 import yearly_project.frontend.kotlin.FocusUtilities;
-import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -336,7 +337,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         int width = displayMetrics.widthPixels;
         Size screen = new Size(width, height); //size of the screen
 
-        return new Preview.Builder().setTargetResolution(screen).build();
+        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
+
+        return preview;
     }
 
     @SuppressLint("UnsafeExperimentalUsageError")
@@ -344,14 +347,27 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         imageAnalysis = builder.build();
 
+        final AtomicInteger[] frameCounter = {new AtomicInteger()};
+        final long[] lastFpsTimestamp = {System.currentTimeMillis()};
+
         imageAnalysis.setAnalyzer(executor, image -> {
             Bitmap map = previewView.getBitmap();
             Mat src = new Mat();
             Mat dst;
             Utils.bitmapToMat(map, src);
             dst = onCameraFrame(src);
-            Bitmap bitmap = Utilities.convertMatToBitMap(dst);
-            runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
+            Utils.matToBitmap(dst,map);
+            runOnUiThread(() -> this.frontImage.setImageBitmap(map));
+
+            int frameCount = 10;
+            if (frameCounter[0].incrementAndGet() % frameCount == 0) {
+                frameCounter[0].set(0);
+                long now = System.currentTimeMillis();
+                long delta = now - lastFpsTimestamp[0];
+                long fps = 1000 * frameCount / delta;
+                Log.d("INFO", String.valueOf(fps));
+                lastFpsTimestamp[0] = now;
+            }
 
             image.close();
         });
