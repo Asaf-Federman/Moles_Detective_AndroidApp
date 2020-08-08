@@ -20,6 +20,8 @@ import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
 
+    private GpuDelegate gpuDelegate;
+
     public enum eModel {
         V3_LARGE("V3-Large", "MobileNet_V3_large.tflite");
 
@@ -62,7 +64,8 @@ public class SegmentationModel {
     private void loadTflite(final Activity activity, eModel segmentationModel) {
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tfliteOptions.addDelegate(new GpuDelegate());
+            gpuDelegate = new GpuDelegate();
+            tfliteOptions.addDelegate(gpuDelegate);
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
 
             return;
@@ -213,14 +216,14 @@ public class SegmentationModel {
         return mat;
     }
 
-//    public void close() {
-//        if (gpuDelegate != null) {
-//            gpuDelegate.close();
-//            gpuDelegate = null;
-//        }
-//        if (tflite != null) {
-//            tflite.close();
-//            tflite = null;
-//        }
-//    }
+    public void close() {
+        if (gpuDelegate != null) {
+            gpuDelegate.close();
+            gpuDelegate = null;
+        }
+        if (tflite != null) {
+            tflite.close();
+            tflite = null;
+        }
+    }
 }

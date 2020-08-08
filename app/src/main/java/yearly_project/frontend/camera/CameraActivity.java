@@ -30,6 +30,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.quickbirdstudios.yuv2mat.Yuv;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -177,6 +178,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         } else {
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+
         if (segModel == null) {
             segModel = new SegmentationModel(CameraActivity.this, SegmentationModel.eModel.V3_LARGE);
         }
@@ -292,8 +294,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @SuppressLint("RestrictedApi")
-    private void startCamera()
-    {
+    private void startCamera() {
         cameraProviderFuture.addListener(() -> {
             ProcessCameraProvider cameraProvider = null;
             try {
@@ -322,7 +323,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             camera.getCameraControl().enableTorch(isTorchMode);
         } catch (Exception e) {
             Timber.tag("INFO").w(e, "Cannot get flash available information");
-            flash.setVisibility(View.VISIBLE);
+            flash.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -334,30 +335,31 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         int width = displayMetrics.widthPixels;
         Size screen = new Size(width, height); //size of the screen
 
-        Preview preview = new Preview.Builder().setTargetResolution(screen).build();
-
-        return preview;
+        return new Preview.Builder().setTargetResolution(screen).build();
     }
 
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
+        ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new Size(previewView.getWidth(),previewView.getHeight()));
         imageAnalysis = builder.build();
 
         final AtomicInteger[] frameCounter = {new AtomicInteger()};
         final long[] lastFpsTimestamp = {System.currentTimeMillis()};
 
         imageAnalysis.setAnalyzer(executor, image -> {
-            Bitmap bitmap = previewView.getBitmap();
-            if(bitmap==null)
-                return;
-
-            Mat src = new Mat();
+//            Bitmap bitmap = previewView.getBitmap();
+//            if (bitmap == null)
+//                return;
+            Bitmap bitmap = Bitmap.createBitmap(previewView.getWidth(),previewView.getHeight(), Bitmap.Config.RGB_565);
+            Mat src = Yuv.rgb(image.getImage());
+            Core.transpose(src,src);
+            Core.flip(src,src,1);
+            Imgproc.resize(src,src,new org.opencv.core.Size(previewView.getWidth(),previewView.getHeight()));
             Mat dst;
 
-            Utils.bitmapToMat(bitmap, src);
+//            Utils.bitmapToMat(bitmap, src);
             dst = onCameraFrame(src);
-            Utils.matToBitmap(dst,bitmap);
+            Utils.matToBitmap(dst, bitmap);
             runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
 
             int frameCount = 10;
@@ -404,6 +406,19 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         try {
             ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
             cameraProvider.unbindAll();
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        try {
+            ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+            cameraProvider.unbindAll();
+            segModel.close();
+            segModel = null;
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }

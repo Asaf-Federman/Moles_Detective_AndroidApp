@@ -150,7 +150,7 @@ public class Utilities {
         Mat mYuv = new Mat(image.getHeight() + image.getHeight() / 2, image.getWidth(), CV_8UC1);
         mYuv.put(0, 0, data);
         Mat mRGB = new Mat();
-        cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGB_NV21, 3);
+        cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGB, 3);
         return mRGB;
     }
 }
