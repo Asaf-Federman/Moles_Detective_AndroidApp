@@ -6,7 +6,7 @@ import androidx.databinding.ObservableMap;
 import java.io.File;
 import java.util.Objects;
 
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.utils.Utilities;
 
 public class UserInformation {
@@ -46,7 +46,7 @@ public class UserInformation {
         File file = new File(basicPath);
         for (File directory : Objects.requireNonNull(file.listFiles())) {
             if (directory.isDirectory()) {
-                String detailFilePath = directory.getAbsolutePath() + "/" + Constants.STATE_FILE_NAME;
+                String detailFilePath = directory.getAbsolutePath() + "/" + Constant.STATE_FILE_NAME;
                 try {
                     if (new File(detailFilePath).exists()) {
                         Information information = Information.fetchObject(detailFilePath);

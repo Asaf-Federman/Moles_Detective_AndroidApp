@@ -27,18 +27,31 @@
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" >
+
+    </androidx.viewpager.widget.ViewPager>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/home"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom|start"
         android:layout_margin="@dimen/fab_margin"
         android:onClick="OnHomeClick"
         app:backgroundTint="@android:color/holo_blue_light"
         app:srcCompat="@drawable/ic_home"
         app:tint="@android:color/white"
         tools:ignore="VectorDrawableCompat" />
+
+    <Button
+        android:id="@+id/submit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:onClick="OnSubmit"
+        android:layout_margin="@dimen/fab_margin"
+        app:tint="@android:color/white"
+        app:backgroundTint="@android:color/holo_blue_light"
+        android:text="Submit Results" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import timber.log.Timber;
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
@@ -77,7 +77,7 @@ public class SegmentationModel {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
             tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (Exception e) {
-            activity.runOnUiThread(() -> Utilities.createAlertDialog(activity, "Error", "Failed to load segmentation model"));
+            activity.runOnUiThread(() -> Utilities.createAlertDialog(activity, "Error", "Failed to load segmentation model" , null));
         }
     }
 
@@ -159,8 +159,8 @@ public class SegmentationModel {
     }
 
     private void initializeInByteBuffer() {
-        DIM_HEIGHT = Constants.DIM_LENGTH;
-        DIM_WIDTH = Constants.DIM_LENGTH;
+        DIM_HEIGHT = Constant.DIM_LENGTH;
+        DIM_WIDTH = Constant.DIM_LENGTH;
         inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
         inBuffer.order(ByteOrder.nativeOrder());
     }

@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -14,6 +13,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -43,29 +43,33 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import timber.log.Timber;
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
-import static yearly_project.frontend.Constants.AMOUNT_OF_PICTURES_TO_TAKE;
+import static yearly_project.frontend.Constant.AMOUNT_OF_PICTURES_TO_TAKE;
 
 public class CameraActivity extends AppCompatActivity implements View.OnClickListener {
-
+    private CameraActivity activity;
     private ImageView startButton;
     private SegmentationModel segModel;
     private SquareWrapper tangentSquare;
     private Circle circle;
     private ScaleGestureDetector gestureDetector;
     private ImageView flash;
+    private ExecutorService executor;
+    private TextView framesTextView;
     private float shapesLength;
     private int counter = 0;
     private boolean isStart = false;
@@ -99,14 +103,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             Timber.d("OpenCV loaded");
     }
 
-    private ExecutorService executor;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
+        activity = this;
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         executor = Executors.newSingleThreadExecutor();
         previewView = findViewById(R.id.view_finder);
@@ -114,6 +117,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         information = UserInformation.createNewInformation();
         startButton = findViewById(R.id.startButton);
         flash = findViewById(R.id.cameraFlash);
+        framesTextView = findViewById(R.id.framesTextView);
         gestureDetector = new ScaleGestureDetector(this, new GestureListener());
 
         ViewTreeObserver viewTreeObserver = previewView.getViewTreeObserver();
@@ -197,12 +201,36 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         rectangle = cutRectangle(mat);
         segmentImage = segModel.segmentImage(rectangle);
         checkForSegmentation();
-        pasteWeights(mat, segmentImage);
+        ifActivityDone();
+        addWeights(mat, segmentImage);
 
 //        Imgproc.rectangle(mat, wrappedSquare.getTopLeft(), wrappedSquare.getBottomRight(), new Scalar(0, 0, 0), 3);
         Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
 
         return mat;
+    }
+
+    private void ifActivityDone() {
+        if (information.getImages().size() >= AMOUNT_OF_PICTURES_TO_TAKE) {
+            synchronized (this) {
+                if (information.getImages().size() == AMOUNT_OF_PICTURES_TO_TAKE) {
+                    isStart = false;
+                    try {
+                        boolean isVerified = information.verifyCameraActivity();
+                        runOnUiThread(() -> {
+                            if
+                            (!isVerified) Utilities.createAlertDialog(activity, "ERROR", "Failed to obtain the needed data", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE)));
+                            else
+                                finishTask(Constant.RESULT_SUCCESS);
+                        });
+                    } catch (IllegalAccessException ignore) {
+                        runOnUiThread(() -> {
+                            Utilities.createAlertDialog(getApplicationContext(), "ERROR", "Failed to verify the need data", (((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+                        });
+                    }
+                }
+            }
+        }
     }
 
     private void checkForSegmentation() {
@@ -212,16 +240,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     final Mat mat = segModel.getSegmentation();
                     new Thread(() -> convertMatToPicture(mat)).start();
                 }
-
-                ++counter;
-            }
-
-            if (counter == 10) {
-                isStart = false;
-                runOnUiThread(() -> {
-                    activityResult(Constants.RESULT_SUCCESS);
-                    finish();
-                });
             }
         }
     }
@@ -232,7 +250,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         information.addImage(gray);
     }
 
-    private void pasteWeights(Mat src, Mat dest) {
+    private void addWeights(Mat src, Mat dest) {
         dest = createMask(dest);
         Mat mat = src.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
         Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
@@ -278,7 +296,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onBackPressed() {
-        activityResult(Constants.RESULT_FAILURE);
+        activityResult(Constant.RESULT_FAILURE);
         super.onBackPressed();
     }
 
@@ -289,7 +307,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public void OnHomeClick(View view) {
-        activityResult(Constants.RESULT_FAILURE);
+        activityResult(Constant.RESULT_FAILURE);
         finish();
     }
 
@@ -308,7 +326,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
             assert cameraProvider != null;
             cameraProvider.unbindAll();
-            this.previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.SURFACE_VIEW);
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
             preview.setSurfaceProvider(previewView.createSurfaceProvider());
             setTorch();
@@ -340,37 +357,35 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new Size(previewView.getWidth(),previewView.getHeight()));
+        ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new Size(previewView.getWidth(), previewView.getHeight()));
         imageAnalysis = builder.build();
 
         final AtomicInteger[] frameCounter = {new AtomicInteger()};
         final long[] lastFpsTimestamp = {System.currentTimeMillis()};
 
         imageAnalysis.setAnalyzer(executor, image -> {
-//            Bitmap bitmap = previewView.getBitmap();
-//            if (bitmap == null)
-//                return;
-            Bitmap bitmap = Bitmap.createBitmap(previewView.getWidth(),previewView.getHeight(), Bitmap.Config.RGB_565);
-            Mat src = Yuv.rgb(image.getImage());
-            Core.transpose(src,src);
-            Core.flip(src,src,1);
-            Imgproc.resize(src,src,new org.opencv.core.Size(previewView.getWidth(),previewView.getHeight()));
+            Bitmap bitmap = Bitmap.createBitmap(previewView.getWidth(), previewView.getHeight(), Bitmap.Config.RGB_565);
+            Mat src = Yuv.rgb(Objects.requireNonNull(image.getImage()));
+            Core.transpose(src, src);
+            Core.flip(src, src, 1);
+            Imgproc.resize(src, src, new org.opencv.core.Size(previewView.getWidth(), previewView.getHeight()));
             Mat dst;
 
-//            Utils.bitmapToMat(bitmap, src);
             dst = onCameraFrame(src);
             Utils.matToBitmap(dst, bitmap);
             runOnUiThread(() -> this.frontImage.setImageBitmap(bitmap));
 
-            int frameCount = 10;
-            if (frameCounter[0].incrementAndGet() % frameCount == 0) {
-                frameCounter[0].set(0);
-                long now = System.currentTimeMillis();
-                long delta = now - lastFpsTimestamp[0];
-                long fps = 1000 * frameCount / delta;
-                Log.d("INFO", String.valueOf(fps));
-                lastFpsTimestamp[0] = now;
-            }
+            new Thread(() -> {
+                int frameCount = 10;
+                if (frameCounter[0].incrementAndGet() % frameCount == 0) {
+                    frameCounter[0].set(0);
+                    long now = System.currentTimeMillis();
+                    long delta = now - lastFpsTimestamp[0];
+                    long fps = 1000 * frameCount / delta;
+                    runOnUiThread(() -> framesTextView.setText(String.format("%d FRAMES PER SECOND", fps)));
+                    lastFpsTimestamp[0] = now;
+                }
+            }).start();
 
             image.close();
         });
@@ -434,5 +449,12 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
 
         setTorch();
+    }
+
+    void finishTask(int result) {
+        runOnUiThread(() -> {
+            activityResult(result);
+            finish();
+        });
     }
 }

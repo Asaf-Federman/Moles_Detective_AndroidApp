@@ -1,6 +1,6 @@
 package yearly_project.frontend;
 
-public class Constants {
+public class Constant {
     public final static int AMOUNT_OF_PICTURES_TO_TAKE = 10;
     public final static String STATE_FILE_NAME = "state.json";
     public final static int RESULT_SUCCESS = 1;

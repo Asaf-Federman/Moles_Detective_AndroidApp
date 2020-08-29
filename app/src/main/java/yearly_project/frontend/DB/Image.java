@@ -1,14 +1,13 @@
 package yearly_project.frontend.DB;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
 import java.lang.reflect.Field;
-
-import yearly_project.frontend.utils.Utilities;
 
 public class Image {
     private final static String type = "png";
@@ -31,14 +30,13 @@ public class Image {
         return path;
     }
 
-    public Mat getImageAsMat() {
-        return Imgcodecs.imread(path + "/" + name);
-    }
-
     public Bitmap getImageAsBitmap() {
-        Mat mat = getImageAsMat();
+        File imgFile = new  File(path + "/" + name);
+        if(imgFile.exists()){
+            return BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+        }
 
-        return Utilities.convertMatToBitMap(mat);
+        return null;
     }
 
     public boolean verify() throws IllegalAccessException {

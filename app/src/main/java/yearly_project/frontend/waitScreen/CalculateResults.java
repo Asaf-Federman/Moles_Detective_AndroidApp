@@ -1,10 +1,11 @@
 package yearly_project.frontend.waitScreen;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,15 +18,16 @@ import java.io.FileNotFoundException;
 
 import cz.msebera.android.httpclient.Header;
 import timber.log.Timber;
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.DB.Image;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
+import yearly_project.frontend.utils.Utilities;
 
 public class CalculateResults extends AppCompatActivity {
     private Information information;
-    private Context activity;
+    private Activity activity;
     private String baseUrl = "34.105.175.145";
     private volatile int counter;
     private Handler mainHandler;
@@ -35,9 +37,9 @@ public class CalculateResults extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calculate_results);
-        int ID = getIntent().getIntExtra("ID",0);
+        int ID = getIntent().getIntExtra("ID", 0);
         information = UserInformation.getInformation(ID);
-        activity = getBaseContext();
+        activity = this;
         getResults();
     }
 
@@ -65,7 +67,7 @@ public class CalculateResults extends AppCompatActivity {
             client.post(activity, "http://" + baseUrl + "/api/analyze?dpi=" + getResources().getDisplayMetrics().densityDpi, params, new TextHttpResponseHandler() {
                 @Override
                 public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-//                    Log.i("INFO", throwable.getMessage());
+                    Log.i("INFO", throwable.getMessage());
                 }
 
                 @Override
@@ -84,16 +86,26 @@ public class CalculateResults extends AppCompatActivity {
         mainHandler.post(myRunnable);
     }
 
-    private synchronized void onTaskCompleted(){
+    private synchronized void onTaskCompleted() {
         --counter;
-        if(counter == 0){
-            finishTask();
+        if (counter == 0) {
+            try {
+                boolean isVerified = information.verifyCalculateResultActivity();
+                finishTask(Constant.RESULT_SUCCESS);
+//                if (!isVerified)
+//                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+//                else{
+//                    finishTask(Constant.RESULT_SUCCESS);
+//                }
+            } catch (IllegalAccessException ignore) {
+                runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to verify the results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+            }
         }
     }
 
-    private void finishTask() {
-        runOnUiThread(()->{
-            activityResult(Constants.RESULT_SUCCESS);
+    private void finishTask(int result) {
+        runOnUiThread(() -> {
+            activityResult(result);
             finish();
         });
     }
@@ -101,12 +113,12 @@ public class CalculateResults extends AppCompatActivity {
     private void activityResult(int result) {
         Intent data = new Intent(activity, CalculateResults.class);
         data.putExtra("ID", information.getSerialNumber());
-        setResult(result,data);
+        setResult(result, data);
     }
 
     @Override
     public void onBackPressed() {
-        activityResult(Constants.RESULT_FAILURE);
+        activityResult(Constant.RESULT_FAILURE);
         super.onBackPressed();
     }
 }

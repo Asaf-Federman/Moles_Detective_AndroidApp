@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         callback = new ObservableMap.OnMapChangedCallback() {
             @Override
             public void onMapChanged(ObservableMap sender, Object key) {
-                List<Information> informationList = new ArrayList<>(sender.values());
+                List<Information> informationList = new ArrayList<Information>(sender.values());
                 setInformationCollection(informationList);
             }
         };
@@ -103,20 +103,22 @@ public class MainActivity extends AppCompatActivity {
         Intent intent;
         assert data != null;
         int ID = data.getIntExtra("ID", -1);
-        if (resultCode == Constants.RESULT_SUCCESS) {
+        if (resultCode == Constant.RESULT_SUCCESS) {
             switch (requestCode) {
-                case Constants.ON_CAMERA:
+                case Constant.ON_CAMERA:
                     intent = new Intent(MainActivity.this, CalculateResults.class);
                     intent.putExtra("ID", ID);
-                    startActivityForResult(intent, Constants.ON_WAIT_SCREEN);
+                    startActivityForResult(intent, Constant.ON_WAIT_SCREEN);
                     break;
-                case Constants.ON_WAIT_SCREEN:
+                case Constant.ON_WAIT_SCREEN:
                     intent = new Intent(MainActivity.this, ResultActivity.class);
                     intent.putExtra("ID", ID);
-                    startActivityForResult(intent, Constants.ON_RESULT);
+                    intent.putExtra("status", 1);
+                    startActivityForResult(intent, Constant.ON_RESULT);
                     break;
-                case Constants.ON_RESULT:
+                case Constant.ON_RESULT:
                     UserInformation.verify(ID);
+                    adapter.updateInformationAt(0);
                     break;
             }
         } else {
@@ -136,23 +138,22 @@ public class MainActivity extends AppCompatActivity {
                 switch (permissions[i]) {
                     case Manifest.permission.WRITE_EXTERNAL_STORAGE:
                         if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            Utilities.createAlertDialog(this, "No Permissions", "There are no write permissions, and therefore the activity can not write to storage");
+                            Utilities.createAlertDialog(this, "No Permissions", "There are no write permissions, and therefore the activity can not write to storage", null);
                         break;
                     case Manifest.permission.CAMERA:
                         if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                            Utilities.createAlertDialog(this, "No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity");
+                            Utilities.createAlertDialog(this, "No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity", null);
                         }else{
                             Intent intent = new Intent(this, CameraActivity.class);
-                            startActivityForResult(intent, Constants.ON_CAMERA);
+                            startActivityForResult(intent, Constant.ON_CAMERA);
                         }
                         break;
                     case Manifest.permission.READ_EXTERNAL_STORAGE:
                         if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                            Utilities.createAlertDialog(this, "No Permissions", "There are no read permissions, and therefore the activity can not read from storage");
+                            Utilities.createAlertDialog(this, "No Permissions", "There are no read permissions, and therefore the activity can not read from storage", null);
                         break;
                     default:
                         break;
-
                 }
             }
         }

@@ -10,28 +10,30 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 
 import timber.log.Timber;
-import yearly_project.frontend.Constants;
+import yearly_project.frontend.Constant;
 import yearly_project.frontend.utils.Utilities;
 
 public class Information implements Comparable<Information> {
     private Date date;
     @SuppressLint("SimpleDateFormat")
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-    private Collection<Image> images;
-//    private Collection<Result> results;
+    private List<Image> images;
+    private String description;
+    private Collection<Result> results;
     private int serialNumber;
     private String path;
 
     public Information(int serialNumber, String basePath) {
         this.serialNumber = serialNumber;
         images = new LinkedList<>();
+        results = new LinkedList<>();
         setPath(serialNumber, basePath);
         date =  new Date();
         createFolder();
@@ -47,12 +49,15 @@ public class Information implements Comparable<Information> {
         return dateFormat.format(date);
     }
 
-    public Collection<Image> getImages() {
+    public List<Image> getImages() {
         return images;
     }
 
     public void addImage(Mat mat) {
-        images.add(new Image(Integer.toString(images.size()), path, mat));
+        Image image = new Image(Integer.toString(images.size()), path, mat);
+        synchronized (this){
+            images.add(image);
+        }
     }
 
     public static Information fetchObject(String path) throws IOException {
@@ -62,32 +67,31 @@ public class Information implements Comparable<Information> {
     }
 
     public boolean verify() throws IllegalAccessException {
-        return !areNullFields() && areArraySizesCorrect() && verifyComposedObjects();
+        return verifyCameraActivity()
+//                && verifyCalculateResultActivity()
+                && verifyResultActivity();
     }
 
-    private boolean areNullFields() throws IllegalAccessException {
-        for (Field field : getClass().getDeclaredFields()) {
-            if (field.get(this) == null)
-                return true;
-        }
-
-        return false;
+    public boolean verifyCameraActivity() throws IllegalAccessException {
+        return images.size() >= Constant.AMOUNT_OF_PICTURES_TO_TAKE &&
+                verifyImages() &&
+                getDate()!=null &&
+                getPath() != null;
     }
 
-    private boolean areArraySizesCorrect() {
-        return images.size() == Constants.AMOUNT_OF_PICTURES_TO_TAKE ;
-//                && results.size() >= 1;
+    public boolean verifyCalculateResultActivity() throws IllegalAccessException {
+        return results.size()>0 && verifyResults();
     }
 
-    private boolean verifyComposedObjects() throws IllegalAccessException {
-        return verifyImages() && verifyResults();
+    public boolean verifyResultActivity(){
+        return getDescription() !=null;
     }
 
     private boolean verifyResults() throws IllegalAccessException {
         boolean areResultsCorrect = true;
-//        for (Result result : results) {
-//            areResultsCorrect = areResultsCorrect && result.verify();
-//        }
+        for (Result result : results) {
+            areResultsCorrect = areResultsCorrect && result.verify();
+        }
 
         return areResultsCorrect;
     }
@@ -114,7 +118,7 @@ public class Information implements Comparable<Information> {
     }
 
     public void saveStateToFile(){
-        try (FileWriter file = new FileWriter(path + "/" + Constants.STATE_FILE_NAME)) {
+        try (FileWriter file = new FileWriter(path + "/" + Constant.STATE_FILE_NAME)) {
             file.write(getJson());
             file.flush();
         } catch (IOException e) {
@@ -138,4 +142,22 @@ public class Information implements Comparable<Information> {
     public String getJson(){
         return new Gson().toJson(this);
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean setDescription(String description) {
+        if(description.isEmpty())
+            return false;
+
+        this.description = description;
+        return true;
+    }
+
+    private void addResult(Result result){
+        results.add(result);
+    }
+
+
 }

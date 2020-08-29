@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/picture"
-        android:layout_width="155dp"
-        android:layout_height="155dp"
+        android:layout_width="105dp"
+        android:layout_height="105dp"
         android:layout_marginTop="10dp"
         app:cardBackgroundColor="@android:color/white"
         app:cardCornerRadius="250dp"
@@ -16,14 +17,14 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:layout_gravity="center"
             app:cardCornerRadius="250dp">
 
             <ImageView
                 android:layout_width="150dp"
-                android:layout_height="150dp"
+                android:layout_height="match_parent"
                 android:background="@color/design_default_color_error"
                 android:scaleType="centerCrop" />
         </androidx.cardview.widget.CardView>
@@ -32,8 +33,8 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
-        android:layout_width="0dp"
-        android:layout_height="353dp"
+        android:layout_width="405dp"
+        android:layout_height="417dp"
         android:orientation="vertical"
         android:padding="14dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,13 +49,14 @@
             android:alignmentMode="alignMargins"
             android:columnCount="2"
             android:columnOrderPreserved="false"
-            android:rowCount="2">
+            android:rowCount="1">
 
             <!-- Row 1 -->
 
             <!-- Column 1 -->
 
             <androidx.cardview.widget.CardView
+
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_rowWeight="1"
@@ -67,11 +69,11 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip1"
+                    android:id="@+id/tooltip_asymmetry"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
-                    app:srcCompat="@drawable/ic_info_outline"/>
+                    app:srcCompat="@drawable/ic_info_outline" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -83,15 +85,16 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
                         android:gravity="center"
                         android:text="Asymmetry"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold|italic" />
 
                     <ProgressBar
-                        android:id="@+id/progressBar2"
+                        android:id="@+id/progress_asymmetry"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -117,7 +120,7 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip2"
+                    android:id="@+id/tooltip_blurry"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
@@ -130,24 +133,20 @@
                     android:layout_margin="16dp"
                     android:orientation="vertical">
 
-                    <!--                    <ImageView-->
-                    <!--                        android:src="@drawable/family_time"-->
-                    <!--                        android:layout_gravity="center_horizontal"-->
-                    <!--                        android:layout_width="wrap_content"-->
-                    <!--                        android:layout_height="wrap_content" />-->
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
                         android:gravity="center"
                         android:text="Blurry Lines"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold|italic" />
 
                     <ProgressBar
-                        android:id="@+id/progressBar3"
+                        android:id="@+id/progress_blurry"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -158,8 +157,72 @@
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
+        </GridLayout>
 
+        <!-- Row 2 -->
 
+        <!-- Column 1 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="269dp"
+            android:layout_height="wrap_content"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="8dp">
+
+            <ImageView
+                android:id="@+id/tooltip_classification"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onToolTipClick"
+                app:srcCompat="@drawable/ic_info_outline" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|center_vertical"
+                android:layout_margin="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:text="Classification"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold|italic" />
+
+                <ProgressBar
+                    android:id="@+id/progress_classification"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:max="100"
+                    android:progress="70"
+                    android:progressTint="#4CAF50" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!--        </GridLayout>-->
+
+        <GridLayout
+            android:id="@+id/thirdGrid"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="8"
+            android:alignmentMode="alignMargins"
+            android:columnCount="2"
+            android:columnOrderPreserved="false"
+            android:rowCount="1">
             <!-- Row 2 -->
 
             <!-- Column 1 -->
@@ -175,7 +238,7 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip3"
+                    android:id="@+id/tooltip_smt"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
@@ -191,15 +254,16 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
                         android:gravity="center"
-                        android:text="Classification"
+                        android:text="smt"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold|italic" />
 
                     <ProgressBar
-                        android:id="@+id/progressBar"
+                        android:id="@+id/progress_smt"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -224,11 +288,11 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip4"
+                    android:id="@+id/tooltip_size"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
-                    app:srcCompat="@drawable/ic_info_outline"/>
+                    app:srcCompat="@drawable/ic_info_outline" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -240,15 +304,16 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
                         android:gravity="center"
                         android:text="Size"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold|italic" />
 
                     <ProgressBar
-                        android:id="@+id/progressBar5"
+                        android:id="@+id/progress_size"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -259,24 +324,24 @@
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
-
         </GridLayout>
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="8dp">
 
             <ImageView
-                android:id="@+id/tooltip5"
+                android:id="@+id/tooltip_result"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="onToolTipClick"
-                app:srcCompat="@drawable/ic_info_outline"/>
+                app:srcCompat="@drawable/ic_info_outline" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -287,15 +352,17 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:fontFamily="monospace"
                     android:gravity="center"
                     android:text="Result"
                     android:textAlignment="center"
                     android:textColor="@android:color/black"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textSize="16sp"
+                    android:textStyle="bold|italic" />
 
                 <ProgressBar
-                    android:id="@+id/progressBar6"
+                    android:id="@+id/progress_result"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -303,10 +370,24 @@
                     android:progress="47"
                     android:progressTint="@android:color/holo_red_dark" />
 
+                <TextView
+                    android:id="@+id/resultText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="5dp"
+                    android:fontFamily="monospace"
+                    android:text="Text"
+                    android:textSize="16dp"
+                    android:textStyle="bold|italic"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.498"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
-
     </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

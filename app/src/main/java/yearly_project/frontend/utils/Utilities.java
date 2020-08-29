@@ -1,7 +1,7 @@
 package yearly_project.frontend.utils;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.media.Image;
@@ -69,12 +69,21 @@ public class Utilities {
         return var9;
     }
 
-    public static void createAlertDialog(Activity activity, String title, String content){
-        new AlertDialog.Builder(activity)
+    public static void createAlertDialog(Context context, String title, String content, DialogInterface.OnClickListener clickListener){
+        AlertDialog alert = new AlertDialog.Builder(context)
                 .setTitle(title)
                 .setMessage(content)
-                .setPositiveButton(android.R.string.ok, null)
+                .setPositiveButton(android.R.string.ok, clickListener)
                 .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    public static void createQuestionDialog(Context context, String title, String content, DialogInterface.OnClickListener yesListener, DialogInterface.OnClickListener noListener){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(title)
+                .setMessage(content)
+                .setPositiveButton("Yes", yesListener)
+                .setNegativeButton("No", noListener)
                 .show();
     }
 
@@ -152,5 +161,9 @@ public class Utilities {
         Mat mRGB = new Mat();
         cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGB, 3);
         return mRGB;
+    }
+
+    public static boolean isBetween(int x, int lower, int upper) {
+        return lower <= x && x <= upper;
     }
 }
