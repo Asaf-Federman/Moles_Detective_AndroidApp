@@ -12,26 +12,28 @@ import java.lang.reflect.Field;
 public class Image {
     private final static String type = "png";
     private final static String folderName = "Pictures";
-    private String path;
+    private String folder;
     private String name;
+    private String path;
 
     public Image(String name, String path, Mat mat) {
         this.name = name + "." + type;
-        this.path = path + "/" + folderName;
+        this.folder = path + "/" + folderName;
+        this.path = this.folder + "/" + this.name;
         createImage(mat);
     }
 
     private void createImage(Mat mat) {
-        new File(path).mkdirs();
-        Imgcodecs.imwrite(path + "/" + name, mat);//
+        new File(folder).mkdirs();
+        Imgcodecs.imwrite(folder + "/" + name, mat);//
     }
 
-    public String getPath(){
-        return path;
+    public String getFolder(){
+        return folder;
     }
 
     public Bitmap getImageAsBitmap() {
-        File imgFile = new  File(path + "/" + name);
+        File imgFile = new  File(folder + "/" + name);
         if(imgFile.exists()){
             return BitmapFactory.decodeFile(imgFile.getAbsolutePath());
         }
@@ -46,5 +48,9 @@ public class Image {
         }
 
         return true;
+    }
+
+    public String getPath() {
+        return path;
     }
 }

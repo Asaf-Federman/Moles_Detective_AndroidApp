@@ -8,6 +8,7 @@ import android.widget.EditText;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
@@ -40,20 +41,27 @@ public class ResultActivity extends AppCompatActivity {
         mSectionsPageAdapter = new SectionsPageAdapter(getSupportFragmentManager());
         // Set up the ViewPager with the sections adapter.
         ViewPager mViewPager = findViewById(R.id.view_pager);
-        setupViewPager(mViewPager);
+        setupViewPager(mViewPager, ID);
 
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
     }
 
-    private void setupViewPager(ViewPager viewPager) {
-        mSectionsPageAdapter.addFragment(new ResultFragment(), "TAB1");
-        mSectionsPageAdapter.addFragment(new ResultFragment(), "TAB2");
+    private void setupViewPager(ViewPager viewPager, int ID) {
+        Bundle bundle = new Bundle();
+        bundle.putInt("ID", ID);
+        for (int i = 0; i < information.getResults().size() +1; ++i) {
+            Fragment fragment = new ResultFragment();
+            String title = "Mole " + (i + 1);
+            fragment.setArguments(bundle);
+            mSectionsPageAdapter.addFragment(fragment,title);
+        }
+
         viewPager.setAdapter(mSectionsPageAdapter);
     }
 
     public void OnHomeClick(View view) {
-        if(status == CREATE){
+        if (status == CREATE) {
             Utilities.createQuestionDialog(this,
                     "Exit Activity",
                     "Are you sure you want to exit? none of the information will be saved",
@@ -62,7 +70,7 @@ public class ResultActivity extends AppCompatActivity {
                         finish();
                     }),
                     null);
-        }else if(status == VIEW){
+        } else if (status == VIEW) {
             activityResult(Constant.RESULT_FAILURE);
             super.onBackPressed();
         }
@@ -76,7 +84,7 @@ public class ResultActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if(status == CREATE){
+        if (status == CREATE) {
             Utilities.createQuestionDialog(this,
                     "Exit Activity",
                     "Are you sure you want to exit? none of the information will be saved",
@@ -85,7 +93,7 @@ public class ResultActivity extends AppCompatActivity {
                         super.onBackPressed();
                     }),
                     null);
-        }else if(status == VIEW){
+        } else if (status == VIEW) {
             activityResult(Constant.RESULT_FAILURE);
             super.onBackPressed();
         }

@@ -1,14 +1,16 @@
 package yearly_project.frontend.results;
 
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 
 import java.util.HashMap;
@@ -16,10 +18,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import it.sephiroth.android.library.xtooltip.Tooltip;
+import yearly_project.frontend.Constant;
+import yearly_project.frontend.DB.Information;
+import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
 
 public class ResultFragment extends Fragment {
+
     enum eToolTip {
         ASYMMETRY("Aspiration to a perfect circle", Tooltip.Gravity.RIGHT),
         BLURRY("The blurriness of the mole's border", Tooltip.Gravity.TOP),
@@ -41,10 +47,10 @@ public class ResultFragment extends Fragment {
     }
 
     enum eColor {
-        VERY_GOOD(Color.GREEN),
-        GOOD(Color.YELLOW),
+        VERY_GOOD(Color.parseColor("#5CB85C")),
+        GOOD(Color.parseColor("#5BC0DE")),
         BAD(Color.rgb(255, 165, 0)),
-        VERY_BAD(Color.RED);
+        VERY_BAD(Color.parseColor("#D9534F"));
 
         int color;
 
@@ -57,6 +63,7 @@ public class ResultFragment extends Fragment {
         }
     }
 
+    private TextView summary;
     private Map<View, eToolTip> toolTips;
     private Map<ProgressBar, Integer> progress;
 
@@ -64,8 +71,12 @@ public class ResultFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.result_fragment, container, false);
-
+        int ID = getArguments().getInt("ID");
+        Information information = UserInformation.getInformation(ID);
+        ImageView mole = view.findViewById(R.id.mole_image);
+        mole.setImageBitmap(information.getImages().get(Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2).getImageAsBitmap());
         toolTips = new HashMap<>(eToolTip.values().length);
+        summary = view.findViewById(R.id.resultText);
         progress = new HashMap<>();
         toolTips.put(view.findViewById(R.id.tooltip_asymmetry), eToolTip.ASYMMETRY);
         toolTips.put(view.findViewById(R.id.tooltip_blurry), eToolTip.BLURRY);
@@ -73,8 +84,15 @@ public class ResultFragment extends Fragment {
         toolTips.put(view.findViewById(R.id.tooltip_size), eToolTip.SIZE);
         toolTips.put(view.findViewById(R.id.tooltip_result), eToolTip.RESULT);
 //        toolTips.put(view.findViewById(R.id.tooltip_smt), eToolTip.RESULT);
+
+        progress.put(view.findViewById(R.id.progress_asymmetry), 24);
+        progress.put(view.findViewById(R.id.progress_blurry), 50);
+        progress.put(view.findViewById(R.id.progress_classification), 80);
+        progress.put(view.findViewById(R.id.progress_size), 20);
+        progress.put(view.findViewById(R.id.progress_result), 25);
         setAction();
         setProgress();
+        summary.setText(getResultSummary(progress.get(view.findViewById(R.id.progress_result))));
         return view;
     }
 
@@ -100,10 +118,27 @@ public class ResultFragment extends Fragment {
         return color;
     }
 
+    private String getResultSummary(int progress) {
+        String summary;
+
+        if (Utilities.isBetween(progress, 0, 24)) {
+            summary = "You passed with flying colors";
+        } else if (Utilities.isBetween(progress, 25, 50)) {
+            summary = "Results are OKAY, no need for concern";
+        } else if (Utilities.isBetween(progress, 51, 75)) {
+            summary = "Please visit a doctor regarding the test results";
+        } else {
+            summary = "Please see a doctor as fast as possible regarding those test results";
+        }
+
+        return summary;
+    }
+
     private void setProgress() {
         for (ProgressBar progressBar : progress.keySet()) {
             progressBar.setProgress(progress.get(progressBar));
-            progressBar.setIndeterminateTintList(ColorStateList.valueOf(getColor(progress.get(progressBar))));
+//            progressBar.setIndeterminateTintList(ColorStateList.valueOf(getColor(Color.GREEN)));
+            DrawableCompat.setTint(progressBar.getProgressDrawable(),getColor(progress.get(progressBar)));
         }
     }
 

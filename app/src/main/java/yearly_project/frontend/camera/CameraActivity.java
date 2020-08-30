@@ -200,7 +200,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         rectangle = cutRectangle(mat);
         segmentImage = segModel.segmentImage(rectangle);
-        checkForSegmentation();
+        checkForSegmentation(rectangle);
         ifActivityDone();
         addWeights(mat, segmentImage);
 
@@ -233,21 +233,19 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    private void checkForSegmentation() {
+    private void checkForSegmentation(Mat mat) {
         if (isStart) {
             if (segModel.isSegmentationSuccessful()) {
                 if (counter < AMOUNT_OF_PICTURES_TO_TAKE) {
-                    final Mat mat = segModel.getSegmentation();
-                    new Thread(() -> convertMatToPicture(mat)).start();
+                    new Thread(() -> convertMatToPicture(mat.clone())).start();
                 }
             }
         }
     }
 
     private void convertMatToPicture(Mat mat) {
-        Mat gray = new Mat();
-        cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
-        information.addImage(gray);
+        cvtColor(mat,mat,Imgproc.COLOR_BGR2RGB);
+        information.addImage(mat);
     }
 
     private void addWeights(Mat src, Mat dest) {

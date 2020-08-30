@@ -155,9 +155,12 @@ public class Information implements Comparable<Information> {
         return true;
     }
 
-    private void addResult(Result result){
+    public void addResult(Result result){
         results.add(result);
     }
 
+    public Collection<Result> getResults(){
+        return results;
+    }
 
 }
