@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+import timber.log.Timber;
 import yearly_project.frontend.Constant;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
@@ -117,8 +118,19 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(intent, Constant.ON_RESULT);
                     break;
                 case Constant.ON_RESULT:
-                    UserInformation.verify(ID);
-                    adapter.updateInformationAt(0);
+                    Information information = UserInformation.getInformation(ID);
+
+                    try {
+                        if(information.isValid()){
+                            adapter.updateInformationAt(0);
+                        }else{
+                            UserInformation.removeInformation(ID);
+                        }
+                    } catch (IllegalAccessException e) {
+                        Timber.i("Couldn't validate the information - %s", e.getMessage());
+                        UserInformation.removeInformation(ID);
+                    }
+
                     break;
             }
         } else {

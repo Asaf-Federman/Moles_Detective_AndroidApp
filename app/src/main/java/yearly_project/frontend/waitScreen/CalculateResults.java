@@ -48,7 +48,7 @@ public class CalculateResults extends AppCompatActivity {
             mainHandler = new Handler(Looper.getMainLooper());
             client = new AsyncHttpClient();
             client.setMaxRetriesAndTimeout(10, 1000);
-            counter = information.getImages().size();
+            counter = information.getImages().getSize();
             for (Image image : information.getImages()) {
                 asyncTask(new File(image.getPath()));
             }
@@ -73,6 +73,7 @@ public class CalculateResults extends AppCompatActivity {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, String responseString) {
                     Timber.i(responseString);
+
                 }
 
                 @Override
@@ -90,7 +91,7 @@ public class CalculateResults extends AppCompatActivity {
         --counter;
         if (counter == 0) {
             try {
-                boolean isVerified = information.verifyCalculateResultActivity();
+                boolean isVerified = information.verifyResults();
                 finishTask(Constant.RESULT_SUCCESS);
 //                if (!isVerified)
 //                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));

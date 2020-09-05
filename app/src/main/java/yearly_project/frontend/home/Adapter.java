@@ -72,7 +72,7 @@ public class Adapter extends ListAdapter<Information,Adapter.MyHolder> {
         try {
             if(currentInformation.verifyCameraActivity()){
                 int pictureToTake=Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2;
-                Bitmap bitmap = currentInformation.getImages().get(pictureToTake).getImageAsBitmap();
+                Bitmap bitmap = currentInformation.getImages().getImage(pictureToTake).getImageAsBitmap();
                 holder.image.setImageBitmap(bitmap);
             }
         } catch (IllegalAccessException ignore) { }

@@ -1,6 +1,9 @@
 package yearly_project.frontend.results;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,10 +29,14 @@ import yearly_project.frontend.utils.Utilities;
 
 public class ResultFragment extends Fragment {
 
+    private Information information;
+    private ImageView mole;
+
     enum eToolTip {
         ASYMMETRY("Aspiration to a perfect circle", Tooltip.Gravity.RIGHT),
         BLURRY("The blurriness of the mole's border", Tooltip.Gravity.TOP),
         CLASSIFICATION_NETWORK("The result from the\nclassifications's neural network", Tooltip.Gravity.RIGHT),
+        COLOR("The color of the mole", Tooltip.Gravity.RIGHT),
         SIZE("The size of the mole", Tooltip.Gravity.TOP),
         RESULT("The final verdict upon taking\ninto account all the parameters", Tooltip.Gravity.RIGHT);
 
@@ -72,28 +79,49 @@ public class ResultFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.result_fragment, container, false);
         int ID = getArguments().getInt("ID");
-        Information information = UserInformation.getInformation(ID);
-        ImageView mole = view.findViewById(R.id.mole_image);
-        mole.setImageBitmap(information.getImages().get(Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2).getImageAsBitmap());
+        information = UserInformation.getInformation(ID);
+        mole = view.findViewById(R.id.mole_image);
+        drawCircleOnMole();
         toolTips = new HashMap<>(eToolTip.values().length);
         summary = view.findViewById(R.id.resultText);
         progress = new HashMap<>();
+
         toolTips.put(view.findViewById(R.id.tooltip_asymmetry), eToolTip.ASYMMETRY);
         toolTips.put(view.findViewById(R.id.tooltip_blurry), eToolTip.BLURRY);
         toolTips.put(view.findViewById(R.id.tooltip_classification), eToolTip.CLASSIFICATION_NETWORK);
+        toolTips.put(view.findViewById(R.id.tooltip_color), eToolTip.COLOR);
         toolTips.put(view.findViewById(R.id.tooltip_size), eToolTip.SIZE);
         toolTips.put(view.findViewById(R.id.tooltip_result), eToolTip.RESULT);
-//        toolTips.put(view.findViewById(R.id.tooltip_smt), eToolTip.RESULT);
 
         progress.put(view.findViewById(R.id.progress_asymmetry), 24);
-        progress.put(view.findViewById(R.id.progress_blurry), 50);
+        progress.put(view.findViewById(R.id.progress_blurry), 51);
         progress.put(view.findViewById(R.id.progress_classification), 80);
+        progress.put(view.findViewById(R.id.progress_color), 75);
         progress.put(view.findViewById(R.id.progress_size), 20);
         progress.put(view.findViewById(R.id.progress_result), 25);
+
         setAction();
         setProgress();
         summary.setText(getResultSummary(progress.get(view.findViewById(R.id.progress_result))));
         return view;
+    }
+
+    private void drawCircleOnMole() {
+        Bitmap bitmap = information.getImages().getImage(Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2).getImageAsBitmap();
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(Color.parseColor("#5BC0DE"));
+        paint.setStrokeWidth(2);
+        paint.setStyle(Paint.Style.STROKE);
+
+        Bitmap workingBitmap = Bitmap.createBitmap(bitmap);
+        Bitmap mutableBitmap = workingBitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+        Canvas canvas = new Canvas(mutableBitmap);
+        canvas.drawCircle(bitmap.getHeight()/2f, bitmap.getWidth()/2f + 35, 25, paint);
+
+        mole.setAdjustViewBounds(true);
+        mole.setImageBitmap(mutableBitmap);
     }
 
     private void setAction() {
@@ -137,7 +165,6 @@ public class ResultFragment extends Fragment {
     private void setProgress() {
         for (ProgressBar progressBar : progress.keySet()) {
             progressBar.setProgress(progress.get(progressBar));
-//            progressBar.setIndeterminateTintList(ColorStateList.valueOf(getColor(Color.GREEN)));
             DrawableCompat.setTint(progressBar.getProgressDrawable(),getColor(progress.get(progressBar)));
         }
     }

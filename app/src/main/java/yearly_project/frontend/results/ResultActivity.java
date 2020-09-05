@@ -50,7 +50,7 @@ public class ResultActivity extends AppCompatActivity {
     private void setupViewPager(ViewPager viewPager, int ID) {
         Bundle bundle = new Bundle();
         bundle.putInt("ID", ID);
-        for (int i = 0; i < information.getResults().size() +1; ++i) {
+        for (int i = 0; i < information.getImages().getSize() +1; ++i) {
             Fragment fragment = new ResultFragment();
             String title = "Mole " + (i + 1);
             fragment.setArguments(bundle);

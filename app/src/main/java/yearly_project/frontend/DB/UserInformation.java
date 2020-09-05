@@ -50,7 +50,7 @@ public class UserInformation {
                 try {
                     if (new File(detailFilePath).exists()) {
                         Information information = Information.fetchObject(detailFilePath);
-                        if (information.verify()) {
+                        if (information.isValid()) {
                             addInformation(information.getSerialNumber(), information);
                         } else {
                             throw new Exception("Invalid information directory");
@@ -67,17 +67,5 @@ public class UserInformation {
 
     public static void setBasicPath(String basicPath) {
         UserInformation.basicPath = basicPath;
-    }
-
-    public static void verify(int ID) {
-        Information information = getInformation(ID);
-
-        try {
-            if (!information.verify()) {
-                throw new Exception("Information is not valid");
-            }
-        } catch (Exception e) {
-            removeInformation(information.getSerialNumber());
-        }
     }
 }

@@ -211,9 +211,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void ifActivityDone() {
-        if (information.getImages().size() >= AMOUNT_OF_PICTURES_TO_TAKE) {
+        if (information.getImages().getSize()  >= AMOUNT_OF_PICTURES_TO_TAKE) {
             synchronized (this) {
-                if (information.getImages().size() == AMOUNT_OF_PICTURES_TO_TAKE) {
+                if (information.getImages().getSize() == AMOUNT_OF_PICTURES_TO_TAKE) {
                     isStart = false;
                     try {
                         boolean isVerified = information.verifyCameraActivity();
@@ -245,7 +245,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     private void convertMatToPicture(Mat mat) {
         cvtColor(mat,mat,Imgproc.COLOR_BGR2RGB);
-        information.addImage(mat);
+        Imgproc.resize(mat,mat, new org.opencv.core.Size(250,250));
+        information.getImages().addImage(mat);
     }
 
     private void addWeights(Mat src, Mat dest) {

@@ -239,7 +239,7 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip_smt"
+                    android:id="@+id/tooltip_color"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
@@ -257,14 +257,14 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="monospace"
                         android:gravity="center"
-                        android:text="smt"
+                        android:text="Color"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
-                        android:id="@+id/progress_smt"
+                        android:id="@+id/progress_color"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"

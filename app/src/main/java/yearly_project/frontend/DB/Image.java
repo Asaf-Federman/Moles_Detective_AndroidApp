@@ -15,11 +15,13 @@ public class Image {
     private String folder;
     private String name;
     private String path;
+    private Moles moles;
 
     public Image(String name, String path, Mat mat) {
         this.name = name + "." + type;
         this.folder = path + "/" + folderName;
         this.path = this.folder + "/" + this.name;
+        moles = new Moles();
         createImage(mat);
     }
 
@@ -41,7 +43,7 @@ public class Image {
         return null;
     }
 
-    public boolean verify() throws IllegalAccessException {
+    public boolean verifyFields() throws IllegalAccessException {
         for (Field field : getClass().getDeclaredFields()) {
             if (field.get(this) == null)
                 return false;
@@ -50,7 +52,21 @@ public class Image {
         return true;
     }
 
+    public boolean verifyMoles() throws IllegalAccessException {
+        boolean isValid = true;
+
+        for(Mole mole : getMoles()){
+            isValid = isValid && mole.isValidMole();
+        }
+
+        return isValid && getMoles().getSize()>0;
+    }
+
     public String getPath() {
         return path;
+    }
+
+    public Moles getMoles() {
+        return moles;
     }
 }
