@@ -3,17 +3,16 @@ package yearly_project.frontend.DB;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 
 public class Moles implements Iterable<Mole>{
-    private Collection<Mole> moles;
+    private ArrayList<Mole> moles;
 
     public Moles(){
         moles = new ArrayList<>();
     }
 
-    private Collection<Mole> getMoles(){
+    private ArrayList<Mole> getMoles(){
         return moles;
     }
 
@@ -25,9 +24,23 @@ public class Moles implements Iterable<Mole>{
         return getMoles().size();
     }
 
+    public Mole getMole(int id){
+        return getMoles().size()<=id ? null : getMoles().get(id);
+    }
+
     @NonNull
     @Override
     public Iterator<Mole> iterator() {
         return getMoles().iterator();
+    }
+
+    public boolean verifyMoles() throws IllegalAccessException {
+        boolean isValid = true;
+
+        for(Mole mole : getMoles()){
+            isValid = isValid && mole.isValidMole();
+        }
+
+        return isValid && getMoles().size()>0;
     }
 }

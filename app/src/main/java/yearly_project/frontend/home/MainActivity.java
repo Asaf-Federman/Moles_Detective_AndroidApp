@@ -32,6 +32,10 @@ import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
 public class MainActivity extends AppCompatActivity {
+
+    public final static int ON_CAMERA = 0;
+    public final static int ON_WAIT_SCREEN = 1;
+    public final static int ON_RESULT = 2;
     RecyclerView recyclerView;
     Adapter adapter;
     ObservableMap.OnMapChangedCallback callback;
@@ -70,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(information -> {
             Intent intent = new Intent(MainActivity.this, ResultActivity.class);
             intent.putExtra("ID", information.getSerialNumber());
+            intent.putExtra("status", Constant.VIEW);
             startActivity(intent);
         });
     }
@@ -104,22 +109,21 @@ public class MainActivity extends AppCompatActivity {
         Intent intent;
         assert data != null;
         int ID = data.getIntExtra("ID", -1);
+        Information information = UserInformation.getInformation(ID);
         if (resultCode == Constant.RESULT_SUCCESS) {
             switch (requestCode) {
-                case Constant.ON_CAMERA:
+                case ON_CAMERA:
                     intent = new Intent(MainActivity.this, CalculateResults.class);
                     intent.putExtra("ID", ID);
-                    startActivityForResult(intent, Constant.ON_WAIT_SCREEN);
+                    startActivityForResult(intent, ON_WAIT_SCREEN);
                     break;
-                case Constant.ON_WAIT_SCREEN:
+                case ON_WAIT_SCREEN:
                     intent = new Intent(MainActivity.this, ResultActivity.class);
                     intent.putExtra("ID", ID);
-                    intent.putExtra("status", 1);
-                    startActivityForResult(intent, Constant.ON_RESULT);
+                    intent.putExtra("status", Constant.CREATE);
+                    startActivityForResult(intent, ON_RESULT);
                     break;
-                case Constant.ON_RESULT:
-                    Information information = UserInformation.getInformation(ID);
-
+                case ON_RESULT:
                     try {
                         if(information.isValid()){
                             adapter.updateInformationAt(0);
@@ -157,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                             Utilities.createAlertDialog(this, "No Permissions", "There are no camera permissions, and therefore you're not eligible to use this activity", null);
                         }else{
                             Intent intent = new Intent(this, CameraActivity.class);
-                            startActivityForResult(intent, Constant.ON_CAMERA);
+                            startActivityForResult(intent, ON_CAMERA);
                         }
                         break;
                     case Manifest.permission.READ_EXTERNAL_STORAGE:

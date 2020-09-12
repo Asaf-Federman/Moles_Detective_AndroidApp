@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +23,10 @@ import java.util.Objects;
 
 import it.sephiroth.android.library.xtooltip.Tooltip;
 import yearly_project.frontend.Constant;
+import yearly_project.frontend.DB.Image;
 import yearly_project.frontend.DB.Information;
+import yearly_project.frontend.DB.Mole;
+import yearly_project.frontend.DB.Result;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
@@ -30,7 +34,8 @@ import yearly_project.frontend.utils.Utilities;
 public class ResultFragment extends Fragment {
 
     private Information information;
-    private ImageView mole;
+    private ImageView mole_image;
+    private int ID;
 
     enum eToolTip {
         ASYMMETRY("Aspiration to a perfect circle", Tooltip.Gravity.RIGHT),
@@ -70,7 +75,6 @@ public class ResultFragment extends Fragment {
         }
     }
 
-    private TextView summary;
     private Map<View, eToolTip> toolTips;
     private Map<ProgressBar, Integer> progress;
 
@@ -78,12 +82,14 @@ public class ResultFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.result_fragment, container, false);
-        int ID = getArguments().getInt("ID");
+        assert getArguments() != null;
+        ID = getArguments().getInt("ID");
+        int mole_id = getArguments().getInt("mole_id");
         information = UserInformation.getInformation(ID);
-        mole = view.findViewById(R.id.mole_image);
-        drawCircleOnMole();
+        mole_image = view.findViewById(R.id.mole_image);
+        drawCircleOnMole(mole_id);
         toolTips = new HashMap<>(eToolTip.values().length);
-        summary = view.findViewById(R.id.resultText);
+        TextView summary = view.findViewById(R.id.resultText);
         progress = new HashMap<>();
 
         toolTips.put(view.findViewById(R.id.tooltip_asymmetry), eToolTip.ASYMMETRY);
@@ -93,12 +99,13 @@ public class ResultFragment extends Fragment {
         toolTips.put(view.findViewById(R.id.tooltip_size), eToolTip.SIZE);
         toolTips.put(view.findViewById(R.id.tooltip_result), eToolTip.RESULT);
 
-        progress.put(view.findViewById(R.id.progress_asymmetry), 24);
-        progress.put(view.findViewById(R.id.progress_blurry), 51);
-        progress.put(view.findViewById(R.id.progress_classification), 80);
-        progress.put(view.findViewById(R.id.progress_color), 75);
-        progress.put(view.findViewById(R.id.progress_size), 20);
-        progress.put(view.findViewById(R.id.progress_result), 25);
+        Result result = information.getAverageResultOfMole(mole_id);
+        progress.put(view.findViewById(R.id.progress_asymmetry), (int) (result.getAsymmetry() * 100));
+        progress.put(view.findViewById(R.id.progress_blurry), (int) (result.getBlurriness() * 100));
+        progress.put(view.findViewById(R.id.progress_classification), (int) (result.getClassification() * 100));
+        progress.put(view.findViewById(R.id.progress_color), (int) (result.getColor() * 100));
+        progress.put(view.findViewById(R.id.progress_size), (int) (result.getSize() * 100));
+        progress.put(view.findViewById(R.id.progress_result), (int) (result.getFinalScore() * 100));
 
         setAction();
         setProgress();
@@ -106,8 +113,20 @@ public class ResultFragment extends Fragment {
         return view;
     }
 
-    private void drawCircleOnMole() {
-        Bitmap bitmap = information.getImages().getImage(Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2).getImageAsBitmap();
+    private void drawCircleOnMole(int mole_id) {
+        Image image = null;
+        try {
+            image = information.getImages().getVerifiedImage();
+        } catch (Exception e) {
+            Log.i("ERROR", "Couldn't get a valid image");
+            Utilities.createAlertDialog(getActivity(), "ERROR", e.getMessage(), (dialog, which)-> {
+                Utilities.activityResult(Constant.RESULT_FAILURE, getActivity(), ID);
+                getActivity().finish();
+            });
+        }
+
+        Bitmap bitmap = image.getImageAsBitmap();
+        Mole mole = image.getMoles().getMole(mole_id);
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(Color.parseColor("#5BC0DE"));
@@ -118,10 +137,10 @@ public class ResultFragment extends Fragment {
         Bitmap mutableBitmap = workingBitmap.copy(Bitmap.Config.ARGB_8888, true);
 
         Canvas canvas = new Canvas(mutableBitmap);
-        canvas.drawCircle(bitmap.getHeight()/2f, bitmap.getWidth()/2f + 35, 25, paint);
+        canvas.drawCircle(mole.getCenter().x, mole.getCenter().y, mole.getRadius(), paint);
 
-        mole.setAdjustViewBounds(true);
-        mole.setImageBitmap(mutableBitmap);
+        mole_image.setAdjustViewBounds(true);
+        mole_image.setImageBitmap(mutableBitmap);
     }
 
     private void setAction() {
@@ -156,7 +175,7 @@ public class ResultFragment extends Fragment {
         } else if (Utilities.isBetween(progress, 51, 75)) {
             summary = "Please visit a doctor regarding the test results";
         } else {
-            summary = "Please see a doctor as fast as possible regarding those test results";
+            summary = "Please see a doctor as fast as possible";
         }
 
         return summary;

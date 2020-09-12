@@ -65,6 +65,7 @@ public class Information implements Comparable<Information> {
         return images;
     }
 
+
     //////////////////////////////////////////// Comparable implementation ////////////////////////////////////////////
 
     @Override
@@ -88,7 +89,7 @@ public class Information implements Comparable<Information> {
     }
 
     public boolean verifyResults() throws IllegalAccessException {
-        return getImages().areResultsValid();
+        return getImages().verifyMoles();
     }
 
     public boolean verifyResultActivity(){
@@ -127,4 +128,19 @@ public class Information implements Comparable<Information> {
         file.mkdirs();
     }
 
+    public Result getAverageResultOfMole(int id){
+        Result result = new Result();
+        int amountOfDivision = 0;
+        for(Image image : getImages()){
+            Mole mole = image.getMoles().getMole(id);
+            if(mole != null){
+                ++ amountOfDivision;
+                result.add(mole.getResult());
+            }
+        }
+
+        result.division(amountOfDivision);
+
+        return result;
+    }
 }

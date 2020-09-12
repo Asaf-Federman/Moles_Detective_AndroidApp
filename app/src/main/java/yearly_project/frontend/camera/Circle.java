@@ -8,11 +8,11 @@ public class Circle {
     private float maximumRadius;
     private float minRadius;
 
-    public Circle(float posHeight, float posWidth, float radius) {
+    public Circle(float posHeight, float posWidth, float radius, float minRadius, float maximumRadius) {
         center = new Point(posHeight / 2, posWidth / 2);
-        minRadius=75;
-        setMaximumRadius(radius);
-        setRadius(radius/2);
+        this.minRadius = minRadius;
+        setMaximumRadius(maximumRadius);
+        setRadius(radius);
     }
 
     public float getRadius() {

@@ -20,12 +20,12 @@ import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
 import yearly_project.frontend.waitScreen.CalculateResults;
 
+import static yearly_project.frontend.Constant.CREATE;
+import static yearly_project.frontend.Constant.VIEW;
+
 public class ResultActivity extends AppCompatActivity {
-    private final int VIEW = 0;
-    private final int CREATE = 1;
     private SectionsPageAdapter mSectionsPageAdapter;
     private Information information;
-    private String m_Text = "";
     private int status;
 
     @Override
@@ -48,11 +48,12 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     private void setupViewPager(ViewPager viewPager, int ID) {
-        Bundle bundle = new Bundle();
-        bundle.putInt("ID", ID);
-        for (int i = 0; i < information.getImages().getSize() +1; ++i) {
+        for (int i = 0; i < information.getImages().getImage(0).getMoles().getSize(); ++i) {
+            Bundle bundle = new Bundle();
+            bundle.putInt("ID", ID);
+            bundle.putInt("mole_id", i);
             Fragment fragment = new ResultFragment();
-            String title = "Mole " + (i + 1);
+            String title = "Mole " + (i +1);
             fragment.setArguments(bundle);
             mSectionsPageAdapter.addFragment(fragment,title);
         }

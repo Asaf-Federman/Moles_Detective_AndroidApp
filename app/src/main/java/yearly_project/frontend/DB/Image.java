@@ -26,8 +26,8 @@ public class Image {
     }
 
     private void createImage(Mat mat) {
-        new File(folder).mkdirs();
-        Imgcodecs.imwrite(folder + "/" + name, mat);//
+        new File(getFolder()).mkdirs();
+        Imgcodecs.imwrite(getFolder() + "/" + name, mat);//
     }
 
     public String getFolder(){
@@ -43,6 +43,14 @@ public class Image {
         return null;
     }
 
+    public Moles getMoles() {
+        return moles;
+    }
+
+    public void addMole(Mole mole){
+        moles.addMole(mole);
+    }
+
     public boolean verifyFields() throws IllegalAccessException {
         for (Field field : getClass().getDeclaredFields()) {
             if (field.get(this) == null)
@@ -52,21 +60,15 @@ public class Image {
         return true;
     }
 
-    public boolean verifyMoles() throws IllegalAccessException {
-        boolean isValid = true;
-
-        for(Mole mole : getMoles()){
-            isValid = isValid && mole.isValidMole();
-        }
-
-        return isValid && getMoles().getSize()>0;
-    }
-
     public String getPath() {
         return path;
     }
 
-    public Moles getMoles() {
-        return moles;
+    public boolean verifyMoles() throws IllegalAccessException {
+        return moles.verifyMoles();
+    }
+
+    public String getName(){
+        return name;
     }
 }

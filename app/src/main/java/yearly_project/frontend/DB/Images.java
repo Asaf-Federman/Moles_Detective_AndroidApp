@@ -27,16 +27,13 @@ public class Images implements Iterable<Image> {
         return getImagesCollection().size();
     }
 
-    public void addImage(Image image) {
-        this.images.add(image);
-    }
-
     public Image getImage(int position) {
         return getImagesCollection().get(position);
     }
 
-    public synchronized void addImage(Mat mat) {
+    public synchronized void addImage(Mat mat, Mat segmentation) {
         Image image = new Image(Integer.toString(images.size()), path, mat);
+        Image segmentationImage = new Image("mask" + Integer.toString(images.size()), path, segmentation);
         images.add(image);
     }
 
@@ -54,19 +51,28 @@ public class Images implements Iterable<Image> {
         return AreFieldsPopulated;
     }
 
-    public boolean areResultsValid() throws IllegalAccessException {
-        boolean areValidResults = true;
-
-        for (Image image : getImagesCollection()) {
-            areValidResults = areValidResults && image.verifyMoles();
-        }
-
-        return areValidResults;
-    }
-
     @NonNull
     @Override
     public Iterator<Image> iterator() {
         return images.iterator();
+    }
+
+    public boolean verifyMoles() throws IllegalAccessException {
+        for(Image image : getImagesCollection()){
+             if(image.verifyMoles())
+                 return true;
+        }
+
+        return false;
+    }
+
+    public Image getVerifiedImage() throws IllegalAccessException {
+        for(Image image : getImagesCollection()){
+            if (image.verifyMoles()) {
+                return image;
+            }
+        }
+
+        return null;
     }
 }

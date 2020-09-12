@@ -4,10 +4,10 @@ import android.graphics.Point;
 
 public class Mole {
     private Point center;
-    private int radius;
+    private float radius;
     private Result result;
 
-    public Mole(Point center, int radius, Result result) {
+    public Mole(Point center, float radius, Result result) {
         this.center = center;
         this.radius = radius;
         this.result = result;
@@ -25,11 +25,11 @@ public class Mole {
         this.center = center;
     }
 
-    public int getRadius() {
+    public float getRadius() {
         return radius;
     }
 
-    public void setRadius(int radius) {
+    public void setRadius(float radius) {
         this.radius = radius;
     }
 

@@ -1,7 +1,9 @@
 package yearly_project.frontend.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.media.Image;
@@ -24,6 +26,7 @@ import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 import timber.log.Timber;
+import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -165,5 +168,11 @@ public class Utilities {
 
     public static boolean isBetween(int x, int lower, int upper) {
         return lower <= x && x <= upper;
+    }
+
+    public static void activityResult(int result, Activity activity, int ID) {
+        Intent data = new Intent(activity, CalculateResults.class);
+        data.putExtra("ID", ID);
+        activity.setResult(result, data);
     }
 }

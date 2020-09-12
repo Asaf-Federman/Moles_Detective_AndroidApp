@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import timber.log.Timber;
-import yearly_project.frontend.Constant;
 import yearly_project.frontend.utils.Utilities;
 
 public class SegmentationModel {
@@ -43,16 +42,16 @@ public class SegmentationModel {
     // image buffers shape
     private static final int DIM_BATCH_SIZE = 1;
     private static final int DIM_PIXEL_SIZE = 1;
-    private static int DIM_HEIGHT;
-    private static int DIM_WIDTH;
     private static final int INCHANNELS = 3;
     private static final int OUTCHANNELS = 1;
-    private float BRIGHTNESS_SCALAR = 1f;
+    public static final int DIM_LENGTH = 100;
+    private static int DIM_HEIGHT;
+    private static int DIM_WIDTH;
+    private float brightness_scalar = 1f;
     private int direction = -1;
     private boolean isSuccessful;
-
-    private Interpreter tflite;
-    private ByteBuffer inBuffer;                          // model input buffer(uint8)
+    private Interpreter tfliteInterpreter;
+    private ByteBuffer inBuffer;
     private int[][][] outBuffer;
 
     public SegmentationModel(final Activity activity, eModel segmentationModel) {
@@ -66,7 +65,7 @@ public class SegmentationModel {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
             gpuDelegate = new GpuDelegate();
             tfliteOptions.addDelegate(gpuDelegate);
-            tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
+            tfliteInterpreter = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
 
             return;
         } catch (Exception e) {
@@ -75,19 +74,19 @@ public class SegmentationModel {
 
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tflite = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
+            tfliteInterpreter = new Interpreter(Utilities.loadMappedFile(activity, segmentationModel.fileName), tfliteOptions);
         } catch (Exception e) {
             activity.runOnUiThread(() -> Utilities.createAlertDialog(activity, "Error", "Failed to load segmentation model" , null));
         }
     }
 
     public Mat segmentImage(Mat modelMat) {
-        if (tflite != null) {
+        if (tfliteInterpreter != null) {
             int oLength = modelMat.height();
             changeBrightness();
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
-            tflite.run(inBuffer, outBuffer);
+            tfliteInterpreter.run(inBuffer, outBuffer);
 
             modelMat = loadFromBufferToMat(outBuffer);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
@@ -97,40 +96,12 @@ public class SegmentationModel {
     }
 
     private void changeBrightness() {
-        if (BRIGHTNESS_SCALAR > 1.0f || BRIGHTNESS_SCALAR < 0.7) {
+        if (brightness_scalar > 1.0f || brightness_scalar < 0.7) {
             direction = direction * -1;
         }
 
-        BRIGHTNESS_SCALAR = BRIGHTNESS_SCALAR + 0.15f * direction;
+        brightness_scalar = brightness_scalar + 0.15f * direction;
     }
-//
-//    public Mat segmentImage(Mat modelMat, int length) {
-//        if (tflite != null) {
-//            if (inpImg == null) initializeByteBuffer(length);
-//            if (outImg == null) initializeOutImg();
-//            File imgFile = new File(Environment.getExternalStorageDirectory().getPath() + "/photos");
-//            for (File image : imgFile.listFiles()) {
-//                Bitmap bitmap = null;
-//                if (image.exists()) {
-//                    bitmap = BitmapFactory.decodeFile(image.getAbsolutePath());
-//                }
-//
-//                Bitmap drawableBitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
-//                Mat resizedMap = new Mat();
-//                Utils.bitmapToMat(drawableBitmap, resizedMap);
-//                Imgproc.resize(resizedMap, resizedMap, new Size(DIM_WIDTH, DIM_HEIGHT));
-//                Imgproc.cvtColor(resizedMap,resizedMap,Imgproc.COLOR_BGR2RGB);
-//                loadMatToBuffer(resizedMap);
-//                modelMat.release();
-//                tflite.run(inpImg, outImg);
-//                modelMat = loadFromBufferToMat(outImg);
-//                final Bitmap map = MainActivity.convertMatToBitMap(modelMat);
-//                modelMat = loadFromBufferToMat(outImg);
-//            }
-//        }
-//
-//        return modelMat;
-//    }
 
     private Mat loadFromBufferToMat(int[][][] outImg) {
         Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
@@ -142,7 +113,7 @@ public class SegmentationModel {
                     if (outImg[i][j][k] != 0) {
                         isSuccessful = true;
                         double[] array = mat.get(j, k);
-                        array[1] = 255 * BRIGHTNESS_SCALAR;
+                        array[1] = 255 * brightness_scalar;
                         mat.put(j, k, array);
                     }
                 }
@@ -155,30 +126,14 @@ public class SegmentationModel {
 
     private void initializeOutBuffer() {
         outBuffer = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
-//        outImg = new long[DIM_BATCH_SIZE][DIM_WIDTH * DIM_HEIGHT * OUTCHANNELS];
     }
 
     private void initializeInByteBuffer() {
-        DIM_HEIGHT = Constant.DIM_LENGTH;
-        DIM_WIDTH = Constant.DIM_LENGTH;
+        DIM_HEIGHT = DIM_LENGTH;
+        DIM_WIDTH = DIM_LENGTH;
         inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
         inBuffer.order(ByteOrder.nativeOrder());
     }
-
-//    private void loadMatToBuffer(Mat mat){
-//    inpImg.rewind();
-//        map.getPixels(intValues,0,map.getWidth(),0,0,map.getWidth(),map.getHeight());
-//        int pixel =0;
-//        for(int i=0; i<DIM_HEIGHT; ++i){
-//            for(int j=0; j<DIM_WIDTH; ++j){
-//                final int val = intValues[pixel++];
-////                Log.i("INFO", String.valueOf((((float)(((val >> 16) & 0xFF) - IMAGE_MEAN))/IMAGE_STD)));
-//                inpImg.putFloat((((((val >> 16) & 0xFF) - IMAGE_MEAN))/IMAGE_STD));
-//                inpImg.putFloat((((((val >> 8) & 0xFF) - IMAGE_MEAN))/IMAGE_STD));
-//                inpImg.putFloat((((((val) & 0xFF) - IMAGE_MEAN))/IMAGE_STD));
-//            }
-//        }
-//    }
 
     private void loadMatToBuffer(Mat mat) {
         inBuffer.rewind();
@@ -188,32 +143,7 @@ public class SegmentationModel {
     }
 
     public boolean isSegmentationSuccessful() {
-//        Mat dst = new Mat();
-//        Imgproc.cvtColor(mat, dst, Imgproc.COLOR_RGB2GRAY);
-//
-//        return Core.countNonZero(dst) != 0;
-
         return isSuccessful;
-    }
-
-    public Mat getSegmentation() {
-        Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
-
-        for (int i = 0; i < 1; i++) {
-            for (int j = 0; j < DIM_HEIGHT; j++) {
-                for (int k = 0; k < DIM_WIDTH; k++) {
-                    if (outBuffer[i][j][k] != 0) {
-                        double[] pixel = mat.get(j, k);
-                        pixel[0] = 255;
-                        pixel[1] = 255;
-                        pixel[2] = 255;
-                        mat.put(j, k, pixel);
-                    }
-                }
-            }
-        }
-
-        return mat;
     }
 
     public void close() {
@@ -221,9 +151,9 @@ public class SegmentationModel {
             gpuDelegate.close();
             gpuDelegate = null;
         }
-        if (tflite != null) {
-            tflite.close();
-            tflite = null;
+        if (tfliteInterpreter != null) {
+            tfliteInterpreter.close();
+            tfliteInterpreter = null;
         }
     }
 }
