@@ -5,6 +5,7 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -13,11 +14,15 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import cz.msebera.android.httpclient.Header;
 import timber.log.Timber;
@@ -37,10 +42,13 @@ public class CalculateResults extends AppCompatActivity {
     private volatile int requestsInProcess;
     private Handler mainHandler;
     AsyncHttpClient client;
+    private Collection<String> errors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        errors = new HashSet<>();
+        Timber.plant(new Timber.DebugTree());
         setContentView(R.layout.activity_calculate_results);
         int ID = getIntent().getIntExtra("ID", 0);
         information = UserInformation.getInformation(ID);
@@ -67,13 +75,18 @@ public class CalculateResults extends AppCompatActivity {
             try {
                 params.put("mole_picture", photo, "image/png");
                 params.setUseJsonStreamer(false);
-            } catch (FileNotFoundException ignored) { }
+            } catch (FileNotFoundException ignored) {
+            }
 
             client.post(activity, "http://" + baseUrl + "/api/analyze?dpi=" + getResources().getDisplayMetrics().densityDpi, params, new JsonHttpResponseHandler() {
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     super.onFailure(statusCode, headers, throwable, errorResponse);
-                    Timber.i(statusCode + " " + throwable.getMessage());
+                    try {
+                        errors.add(errorResponse.get("data").toString());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -97,13 +110,13 @@ public class CalculateResults extends AppCompatActivity {
         Gson gson = new Gson();
 
         try {
-            for (int i = 0; i< jsonObject.length(); ++i ) {
+            for (int i = 0; i < jsonObject.length(); ++i) {
                 String moleDescription = jsonObject.get(Objects.requireNonNull(jsonObject.names()).get(i).toString()).toString().replaceAll("\\s", "");
                 Timber.i(moleDescription);
-                MoleResult moleResult = gson.fromJson(moleDescription,MoleResult.class);
-                Result result = new Result(moleResult.asymmetric_score,moleResult.border_score,
+                MoleResult moleResult = gson.fromJson(moleDescription, MoleResult.class);
+                Result result = new Result(moleResult.asymmetric_score, moleResult.border_score,
                         moleResult.size_score, moleResult.classification_score, moleResult.color_score, moleResult.final_score);
-                Mole mole = new Mole(new Point(moleResult.mole_center.get(1),moleResult.mole_center.get(0)),moleResult.mole_radius, result);
+                Mole mole = new Mole(new Point(moleResult.mole_center.get(1), moleResult.mole_center.get(0)), moleResult.mole_radius, result);
                 image.addMole(mole);
             }
         } catch (Exception e) {
@@ -114,15 +127,16 @@ public class CalculateResults extends AppCompatActivity {
     private synchronized void onTaskCompleted() {
         --requestsInProcess;
         if (requestsInProcess == 0) {
+            String errorString = this.errors.stream().collect(Collectors.joining("\n"));
+            runOnUiThread(()-> Toast.makeText(activity,errorString,Toast.LENGTH_LONG).show());
             try {
                 if (information.verifyResults()) {
                     finishTask(Constant.RESULT_SUCCESS);
-                }
-                else{
-                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+                } else {
+                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results\nReceived the following errors:\n\n" + errorString, ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
                 }
             } catch (IllegalAccessException ignore) {
-                runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to verify the results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+                runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to verify the results\n" + errorString, ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
             }
         }
     }
