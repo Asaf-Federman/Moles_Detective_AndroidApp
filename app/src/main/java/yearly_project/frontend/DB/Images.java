@@ -31,9 +31,8 @@ public class Images implements Iterable<Image> {
         return getImagesCollection().get(position);
     }
 
-    public synchronized void addImage(Mat mat, Mat segmentation) {
+    public synchronized void addImage(Mat mat) {
         Image image = new Image(Integer.toString(images.size()), path, mat);
-        Image segmentationImage = new Image("mask" + Integer.toString(images.size()), path, segmentation);
         images.add(image);
     }
 

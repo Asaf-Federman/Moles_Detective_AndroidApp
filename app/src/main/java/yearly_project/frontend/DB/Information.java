@@ -41,12 +41,8 @@ public class Information implements Comparable<Information> {
         return description;
     }
 
-    public boolean setDescription(String description) {
-        if(description.isEmpty())
-            return false;
-
+    public void setDescription(String description) {
         this.description = description;
-        return true;
     }
 
     public String getPath(){

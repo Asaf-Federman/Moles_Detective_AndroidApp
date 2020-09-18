@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void OnCameraClick(View view) {
         try {
-            askForPermission(10, Manifest.permission.CAMERA);
+            askForPermission(Manifest.permission.CAMERA);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -142,8 +142,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void askForPermission(Integer requestCode, String... permissions) {
-        PermissionHandler(requestCode, permissions);
+    private void askForPermission(String... permissions) {
+        ActivityCompat.requestPermissions(this, permissions, 10);
     }
 
     @Override
@@ -175,13 +175,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void PermissionHandler(Integer requestCode, String... permissionsToRequest) {
-        ActivityCompat.requestPermissions(this, permissionsToRequest, requestCode);
-    }
-
     private void askForPermissions() {
         try {
-            askForPermission(10, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE);
+            askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE);
         } catch (Exception e) {
             this.finish();
         }

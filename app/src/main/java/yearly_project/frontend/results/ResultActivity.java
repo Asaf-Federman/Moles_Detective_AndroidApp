@@ -1,6 +1,5 @@
 package yearly_project.frontend.results;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,7 +17,6 @@ import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
-import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static yearly_project.frontend.Constant.CREATE;
 import static yearly_project.frontend.Constant.VIEW;
@@ -42,7 +40,6 @@ public class ResultActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         ViewPager mViewPager = findViewById(R.id.view_pager);
         setupViewPager(mViewPager, ID);
-
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
     }
@@ -67,20 +64,14 @@ public class ResultActivity extends AppCompatActivity {
                     "Exit Activity",
                     "Are you sure you want to exit? none of the information will be saved",
                     ((dialog, which) -> {
-                        activityResult(Constant.RESULT_FAILURE);
+                        Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
                         finish();
                     }),
                     null);
         } else if (status == VIEW) {
-            activityResult(Constant.RESULT_FAILURE);
+            Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
             super.onBackPressed();
         }
-    }
-
-    private void activityResult(int result) {
-        Intent data = new Intent(ResultActivity.this, CalculateResults.class);
-        data.putExtra("ID", information.getSerialNumber());
-        setResult(result, data);
     }
 
     @Override
@@ -90,12 +81,12 @@ public class ResultActivity extends AppCompatActivity {
                     "Exit Activity",
                     "Are you sure you want to exit? none of the information will be saved",
                     ((dialog, which) -> {
-                        activityResult(Constant.RESULT_FAILURE);
+                        Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
                         super.onBackPressed();
                     }),
                     null);
         } else if (status == VIEW) {
-            activityResult(Constant.RESULT_FAILURE);
+            Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
             super.onBackPressed();
         }
     }
@@ -114,7 +105,7 @@ public class ResultActivity extends AppCompatActivity {
             String text = input.getText().toString();
             information.setDescription(text);
             if (information.verifyResultActivity()) {
-                activityResult(Constant.RESULT_SUCCESS);
+                Utilities.activityResult(Constant.RESULT_SUCCESS, this, information.getSerialNumber());
                 information.saveStateToFile();
                 finish();
             } else {

@@ -8,9 +8,9 @@ public class Circle {
     private float maximumRadius;
     private float minRadius;
 
-    public Circle(float posHeight, float posWidth, float radius, float minRadius, float maximumRadius) {
-        center = new Point(posHeight / 2, posWidth / 2);
-        this.minRadius = minRadius;
+    public Circle(float screenHeight, float screenWidth, float radius, float minRadius, float maximumRadius) {
+        setCenter(screenHeight, screenWidth);
+        setMinRadius(minRadius);
         setMaximumRadius(maximumRadius);
         setRadius(radius);
     }
@@ -25,6 +25,14 @@ public class Circle {
 
     public Point getCenter() {
         return center;
+    }
+
+    private void setCenter(float screenHeight, float screenWidth){
+        this.center = new Point(screenHeight / 2, screenWidth / 2);
+    }
+
+    private void setMinRadius(float minRadius){
+        this.minRadius =minRadius;
     }
 
     public void setMaximumRadius(float maximumRadius) {

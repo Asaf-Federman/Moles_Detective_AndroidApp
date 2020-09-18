@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import it.sephiroth.android.library.xtooltip.Tooltip;
+import timber.log.Timber;
 import yearly_project.frontend.Constant;
 import yearly_project.frontend.DB.Image;
 import yearly_project.frontend.DB.Information;
@@ -109,7 +109,7 @@ public class ResultFragment extends Fragment {
 
         setAction();
         setProgress();
-        summary.setText(getResultSummary(progress.get(view.findViewById(R.id.progress_result))));
+        summary.setText(getResultSummary(Objects.requireNonNull(progress.get(view.findViewById(R.id.progress_result)))));
         return view;
     }
 
@@ -118,13 +118,14 @@ public class ResultFragment extends Fragment {
         try {
             image = information.getImages().getVerifiedImage();
         } catch (Exception e) {
-            Log.i("ERROR", "Couldn't get a valid image");
-            Utilities.createAlertDialog(getActivity(), "ERROR", e.getMessage(), (dialog, which)-> {
-                Utilities.activityResult(Constant.RESULT_FAILURE, getActivity(), ID);
+            Timber.i("Couldn't get a valid image");
+            Utilities.createAlertDialog(getActivity(), "ERROR", e.getMessage(), (dialog, which) -> {
+                Utilities.activityResult(Constant.RESULT_FAILURE, Objects.requireNonNull(getActivity()), ID);
                 getActivity().finish();
             });
         }
 
+        assert image != null;
         Bitmap bitmap = image.getImageAsBitmap();
         Mole mole = image.getMoles().getMole(mole_id);
         Paint paint = new Paint();
@@ -132,13 +133,10 @@ public class ResultFragment extends Fragment {
         paint.setColor(Color.parseColor("#5BC0DE"));
         paint.setStrokeWidth(2);
         paint.setStyle(Paint.Style.STROKE);
-
         Bitmap workingBitmap = Bitmap.createBitmap(bitmap);
         Bitmap mutableBitmap = workingBitmap.copy(Bitmap.Config.ARGB_8888, true);
-
         Canvas canvas = new Canvas(mutableBitmap);
         canvas.drawCircle(mole.getCenter().x, mole.getCenter().y, mole.getRadius(), paint);
-
         mole_image.setAdjustViewBounds(true);
         mole_image.setImageBitmap(mutableBitmap);
     }
@@ -183,8 +181,8 @@ public class ResultFragment extends Fragment {
 
     private void setProgress() {
         for (ProgressBar progressBar : progress.keySet()) {
-            progressBar.setProgress(progress.get(progressBar));
-            DrawableCompat.setTint(progressBar.getProgressDrawable(),getColor(progress.get(progressBar)));
+            progressBar.setProgress(Objects.requireNonNull(progress.get(progressBar)));
+            DrawableCompat.setTint(progressBar.getProgressDrawable(), getColor(Objects.requireNonNull(progress.get(progressBar))));
         }
     }
 

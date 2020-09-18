@@ -1,7 +1,6 @@
 package yearly_project.frontend.camera;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -56,7 +55,6 @@ import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.DB.UserInformation;
 import yearly_project.frontend.R;
 import yearly_project.frontend.utils.Utilities;
-import yearly_project.frontend.waitScreen.CalculateResults;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
 import static yearly_project.frontend.Constant.AMOUNT_OF_PICTURES_TO_TAKE;
@@ -71,7 +69,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private ScaleGestureDetector gestureDetector;
     private ExecutorService executor;
     private TextView framesTextView;
-    private float shapesLength;
     private Information information;
     private int cameraWidth, cameraHeight;
     private static final int REQUEST_CODE_PERMISSIONS = 101;
@@ -125,7 +122,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     previewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     cameraWidth = previewView.getWidth();
                     cameraHeight = previewView.getHeight();
-                    shapesLength = Math.max(cameraHeight, cameraWidth) / 3f;
                     initialize(cameraHeight, cameraWidth);
                 }
             });
@@ -154,21 +150,16 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @Override
-    public void onClick(View v) {
-
-    }
+    public void onClick(View v) {}
 
     private class GestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
-            float mScaleFactor = detector.getScaleFactor();
-
-            circle.scale(mScaleFactor);
+            circle.scale(detector.getScaleFactor());
 
             return true;
         }
-
     }
 
     @Override
@@ -193,14 +184,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     public Mat onCameraFrame(Mat mat) {
         Mat rectangle, segmentImage;
-        cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
 
+        cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
         rectangle = cutRectangle(mat);
         segmentImage = segModel.segmentImage(rectangle);
-        checkForSegmentation(rectangle, segmentImage);
+        checkForSegmentation(rectangle);
         ifActivityDone();
         addWeights(mat, segmentImage);
-
         Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
 
         return mat;
@@ -227,21 +217,20 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    private void checkForSegmentation(Mat mat, Mat segmentation) {
+    private void checkForSegmentation(Mat mat) {
         if (isStart) {
             if (segModel.isSegmentationSuccessful()) {
                 if (information.getImages().getSize() < AMOUNT_OF_PICTURES_TO_TAKE) {
-                    new Thread(() -> convertMatToPicture(mat.clone(), segmentation.clone())).start();
+                    new Thread(() -> convertMatToPicture(mat.clone())).start();
                 }
             }
         }
     }
 
-    private void convertMatToPicture(Mat mat, Mat segmentation) {
+    private void convertMatToPicture(Mat mat) {
         cvtColor(mat,mat,Imgproc.COLOR_BGR2RGB);
         Imgproc.resize(mat,mat, new org.opencv.core.Size(250,250));
-        Imgproc.resize(segmentation, segmentation, new org.opencv.core.Size(250,250));
-        information.getImages().addImage(mat, segmentation);
+        information.getImages().addImage(mat);
     }
 
     private void addWeights(Mat src, Mat dest) {
@@ -285,18 +274,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onBackPressed() {
-        activityResult(Constant.RESULT_FAILURE);
+        Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
         super.onBackPressed();
     }
 
-    private void activityResult(int result) {
-        Intent data = new Intent(this, CalculateResults.class);
-        data.putExtra("ID", information.getSerialNumber());
-        setResult(result, data);
-    }
 
     public void OnHomeClick(View view) {
-        activityResult(Constant.RESULT_FAILURE);
+        Utilities.activityResult(Constant.RESULT_FAILURE, this, information.getSerialNumber());
         finish();
     }
 
@@ -316,7 +300,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
             assert cameraProvider != null;
             cameraProvider.unbindAll();
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
-            preview.setSurfaceProvider(previewView.createSurfaceProvider());
+            preview.setSurfaceProvider(previewView.getSurfaceProvider());
             setTorch();
         }, ContextCompat.getMainExecutor(this));
     }
@@ -373,8 +357,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
                     long fps = 1000 * frameCount / delta;
                     runOnUiThread(() -> framesTextView.setText(String.format(Locale.getDefault(),"%d FRAMES PER SECOND", fps)));
                     lastFpsTimestamp[0] = now;
-                }
-            }).start();
+                }}).start();
 
             image.close();
         });
@@ -432,7 +415,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         int torchState;
 
         try{
-            torchState = camera.getCameraInfo().getTorchState().getValue();
+            torchState = Objects.requireNonNull(camera.getCameraInfo().getTorchState().getValue());
         } catch (NullPointerException exception){
             Toast.makeText(this,"Couldn't get the state of the torch", Toast.LENGTH_LONG).show();
             return;
@@ -451,7 +434,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     void finishTask(int result) {
         runOnUiThread(() -> {
-            activityResult(result);
+            Utilities.activityResult(result, this, information.getSerialNumber());
             finish();
         });
     }

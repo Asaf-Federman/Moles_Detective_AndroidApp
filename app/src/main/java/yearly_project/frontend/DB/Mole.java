@@ -8,9 +8,9 @@ public class Mole {
     private Result result;
 
     public Mole(Point center, float radius, Result result) {
-        this.center = center;
-        this.radius = radius;
-        this.result = result;
+        setCenter(center);
+        setRadius(radius);
+        setResult(result);
     }
 
     boolean isValidMole() throws IllegalAccessException {

@@ -42,8 +42,8 @@ public class SegmentationModel {
     // image buffers shape
     private static final int DIM_BATCH_SIZE = 1;
     private static final int DIM_PIXEL_SIZE = 1;
-    private static final int INCHANNELS = 3;
-    private static final int OUTCHANNELS = 1;
+    private static final int IN_CHANNELS = 3;
+    private static final int OUT_CHANNELS = 1;
     public static final int DIM_LENGTH = 100;
     private static int DIM_HEIGHT;
     private static int DIM_WIDTH;
@@ -87,7 +87,6 @@ public class SegmentationModel {
             Imgproc.resize(modelMat, modelMat, new Size(DIM_WIDTH, DIM_HEIGHT));
             loadMatToBuffer(modelMat);
             tfliteInterpreter.run(inBuffer, outBuffer);
-
             modelMat = loadFromBufferToMat(outBuffer);
             Imgproc.resize(modelMat, modelMat, new Size(oLength, oLength));
         }
@@ -125,19 +124,19 @@ public class SegmentationModel {
 
 
     private void initializeOutBuffer() {
-        outBuffer = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUTCHANNELS];
+        outBuffer = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUT_CHANNELS];
     }
 
     private void initializeInByteBuffer() {
         DIM_HEIGHT = DIM_LENGTH;
         DIM_WIDTH = DIM_LENGTH;
-        inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * INCHANNELS);
+        inBuffer = ByteBuffer.allocateDirect(DIM_BATCH_SIZE * DIM_HEIGHT * DIM_WIDTH * DIM_PIXEL_SIZE * IN_CHANNELS);
         inBuffer.order(ByteOrder.nativeOrder());
     }
 
     private void loadMatToBuffer(Mat mat) {
         inBuffer.rewind();
-        byte[] data = new byte[DIM_WIDTH * DIM_HEIGHT * INCHANNELS];
+        byte[] data = new byte[DIM_WIDTH * DIM_HEIGHT * IN_CHANNELS];
         mat.get(0, 0, data);
         inBuffer = ByteBuffer.wrap(data);
     }
