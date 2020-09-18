@@ -39,7 +39,7 @@ public class ResultFragment extends Fragment {
 
     enum eToolTip {
         ASYMMETRY("Aspiration to a perfect circle", Tooltip.Gravity.RIGHT),
-        BLURRY("The blurriness of the mole's border", Tooltip.Gravity.TOP),
+        BORDER_IRREGULARITY("The irregularity of the mole's border", Tooltip.Gravity.TOP),
         CLASSIFICATION_NETWORK("The result from the\nclassifications's neural network", Tooltip.Gravity.RIGHT),
         COLOR("The color of the mole", Tooltip.Gravity.RIGHT),
         SIZE("The size of the mole", Tooltip.Gravity.TOP),
@@ -93,7 +93,7 @@ public class ResultFragment extends Fragment {
         progress = new HashMap<>();
 
         toolTips.put(view.findViewById(R.id.tooltip_asymmetry), eToolTip.ASYMMETRY);
-        toolTips.put(view.findViewById(R.id.tooltip_blurry), eToolTip.BLURRY);
+        toolTips.put(view.findViewById(R.id.tooltip_border_irregularity), eToolTip.BORDER_IRREGULARITY);
         toolTips.put(view.findViewById(R.id.tooltip_classification), eToolTip.CLASSIFICATION_NETWORK);
         toolTips.put(view.findViewById(R.id.tooltip_color), eToolTip.COLOR);
         toolTips.put(view.findViewById(R.id.tooltip_size), eToolTip.SIZE);
@@ -101,7 +101,7 @@ public class ResultFragment extends Fragment {
 
         Result result = information.getAverageResultOfMole(mole_id);
         progress.put(view.findViewById(R.id.progress_asymmetry), (int) (result.getAsymmetry() * 100));
-        progress.put(view.findViewById(R.id.progress_blurry), (int) (result.getBlurriness() * 100));
+        progress.put(view.findViewById(R.id.progress_border_irregularity), (int) (result.getBorderIrregularity() * 100));
         progress.put(view.findViewById(R.id.progress_classification), (int) (result.getClassification() * 100));
         progress.put(view.findViewById(R.id.progress_color), (int) (result.getColor() * 100));
         progress.put(view.findViewById(R.id.progress_size), (int) (result.getSize() * 100));

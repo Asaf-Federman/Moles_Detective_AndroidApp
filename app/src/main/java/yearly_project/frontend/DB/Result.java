@@ -4,15 +4,15 @@ import java.lang.reflect.Field;
 
 public class Result {
     private float asymmetry;
-    private float blurriness;
+    private float borderIrregularity;
     private float size;
     private float classification;
     private float color;
     private float finalScore;
 
-    public Result(float asymmetry, float blurriness, float size, float classification, float color, float finalScore) {
+    public Result(float asymmetry, float borderIrregularity, float size, float classification, float color, float finalScore) {
         this.asymmetry = asymmetry;
-        this.blurriness = blurriness;
+        this.borderIrregularity = borderIrregularity;
         this.size = size;
         this.classification = classification;
         this.color = color;
@@ -21,19 +21,19 @@ public class Result {
 
     public Result(){
         setAsymmetry(0);
-        setBlurriness(0);
+        setBorderIrregularity(0);
         setSize(0);
         setClassification(0);
         setColor(0);
         setFinalScore(0);
     }
 
-    public float getBlurriness() {
-        return blurriness;
+    public float getBorderIrregularity() {
+        return borderIrregularity;
     }
 
-    public void setBlurriness(float blurriness) {
-        this.blurriness = blurriness;
+    public void setBorderIrregularity(float borderIrregularity) {
+        this.borderIrregularity = borderIrregularity;
     }
 
     public float getAsymmetry() {
@@ -85,7 +85,7 @@ public class Result {
 
     public void add(Result source) {
         setAsymmetry(getAsymmetry() + source.getAsymmetry());
-        setBlurriness(getBlurriness() + source.getBlurriness());
+        setBorderIrregularity(getBorderIrregularity() + source.getBorderIrregularity());
         setSize(getSize() + source.getSize());
         setClassification(getClassification() + source.getClassification());
         setColor(getColor() + source.getColor());
@@ -94,7 +94,7 @@ public class Result {
 
     public void division(int divisionAmount) {
         setAsymmetry(getAsymmetry() / divisionAmount);
-        setBlurriness(getBlurriness() / divisionAmount);
+        setBorderIrregularity(getBorderIrregularity() / divisionAmount);
         setSize(getSize() / divisionAmount);
         setClassification(getClassification() / divisionAmount);
         setColor(getColor() / divisionAmount);

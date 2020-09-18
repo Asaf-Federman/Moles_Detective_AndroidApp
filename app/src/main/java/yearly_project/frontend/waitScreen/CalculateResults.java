@@ -10,19 +10,21 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import cz.msebera.android.httpclient.Header;
 import timber.log.Timber;
@@ -75,17 +77,21 @@ public class CalculateResults extends AppCompatActivity {
             try {
                 params.put("mole_picture", photo, "image/png");
                 params.setUseJsonStreamer(false);
-            } catch (FileNotFoundException ignored) {
-            }
+            } catch (FileNotFoundException ignored) {}
 
             client.post(activity, "http://" + baseUrl + "/api/analyze?dpi=" + getResources().getDisplayMetrics().densityDpi, params, new JsonHttpResponseHandler() {
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     super.onFailure(statusCode, headers, throwable, errorResponse);
                     try {
-                        errors.add(errorResponse.get("data").toString());
-                    } catch (JSONException e) {
+                        Gson gson = new Gson();
+                        Type mapType = new TypeToken<Map<String,String>>(){}.getType();
+                        String data = errorResponse.get("data").toString();
+                        LinkedTreeMap<String,String> errorMap = gson.fromJson(data, mapType);
+                        errors.add(errorMap.get("description"));
+                    } catch (Exception e) {
                         e.printStackTrace();
+                        Timber.i(errorResponse.toString());
                     }
                 }
 
@@ -127,7 +133,7 @@ public class CalculateResults extends AppCompatActivity {
     private synchronized void onTaskCompleted() {
         --requestsInProcess;
         if (requestsInProcess == 0) {
-            String errorString = this.errors.stream().collect(Collectors.joining("\n"));
+            String errorString = String.join("\n", this.errors);
             runOnUiThread(()-> Toast.makeText(activity,errorString,Toast.LENGTH_LONG).show());
             try {
                 if (information.verifyResults()) {

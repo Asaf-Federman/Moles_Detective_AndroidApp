@@ -122,7 +122,7 @@
                 app:cardElevation="8dp">
 
                 <ImageView
-                    android:id="@+id/tooltip_blurry"
+                    android:id="@+id/tooltip_border_irregularity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onToolTipClick"
@@ -141,14 +141,14 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="monospace"
                         android:gravity="center"
-                        android:text="Blurry Lines"
+                        android:text="Border"
                         android:textAlignment="center"
                         android:textColor="@android:color/black"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
-                        android:id="@+id/progress_blurry"
+                        android:id="@+id/progress_border_irregularity"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"

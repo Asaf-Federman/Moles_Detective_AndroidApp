@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import yearly_project.frontend.Constant;
+import yearly_project.frontend.DB.Image;
 import yearly_project.frontend.DB.Information;
 import yearly_project.frontend.R;
 
@@ -70,9 +70,9 @@ public class Adapter extends ListAdapter<Information,Adapter.MyHolder> {
             holder.description.setText(currentInformation.getDescription());
         }
         try {
-            if(currentInformation.verifyCameraActivity()){
-                int pictureToTake=Constant.AMOUNT_OF_PICTURES_TO_TAKE / 2;
-                Bitmap bitmap = currentInformation.getImages().getImage(pictureToTake).getImageAsBitmap();
+            if(currentInformation.verifyResults()){
+                Image pictureToTake=currentInformation.getImages().getVerifiedImage();
+                Bitmap bitmap = pictureToTake.getImageAsBitmap();
                 holder.image.setImageBitmap(bitmap);
             }
         } catch (IllegalAccessException ignore) { }
