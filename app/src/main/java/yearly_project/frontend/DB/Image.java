@@ -64,8 +64,8 @@ public class Image {
         return path;
     }
 
-    public boolean verifyMoles() throws IllegalAccessException {
-        return moles.verifyMoles();
+    public boolean verifyMoles(int maximumAmountOfMoles) throws IllegalAccessException {
+        return moles.verifyMoles(maximumAmountOfMoles);
     }
 
     public String getName(){

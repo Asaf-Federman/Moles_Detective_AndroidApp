@@ -10,7 +10,7 @@
         android:layout_width="105dp"
         android:layout_height="105dp"
         android:layout_marginTop="10dp"
-        app:cardBackgroundColor="@android:color/white"
+        app:cardBackgroundColor="@android:color/transparent"
         app:cardCornerRadius="250dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,6 +20,7 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_gravity="center"
+            app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="250dp">
 
             <ImageView

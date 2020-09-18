@@ -45,7 +45,7 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     private void setupViewPager(ViewPager viewPager, int ID) {
-        for (int i = 0; i < information.getImages().getImage(0).getMoles().getSize(); ++i) {
+        for (int i = 0; i < information.getImages().getMaximumAmountOfMoles(); ++i) {
             Bundle bundle = new Bundle();
             bundle.putInt("ID", ID);
             bundle.putInt("mole_id", i);

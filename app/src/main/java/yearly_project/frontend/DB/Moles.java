@@ -34,13 +34,13 @@ public class Moles implements Iterable<Mole>{
         return getMoles().iterator();
     }
 
-    public boolean verifyMoles() throws IllegalAccessException {
+    public boolean verifyMoles(int maximumAmountOfMoles) throws IllegalAccessException {
         boolean isValid = true;
 
         for(Mole mole : getMoles()){
             isValid = isValid && mole.isValidMole();
         }
 
-        return isValid && getMoles().size()>0;
+        return isValid && getMoles().size()>0 && getMoles().size() == maximumAmountOfMoles;
     }
 }

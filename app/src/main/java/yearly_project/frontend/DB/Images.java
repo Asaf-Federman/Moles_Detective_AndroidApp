@@ -58,7 +58,7 @@ public class Images implements Iterable<Image> {
 
     public boolean verifyMoles() throws IllegalAccessException {
         for(Image image : getImagesCollection()){
-             if(image.verifyMoles())
+             if(image.verifyMoles(getMaximumAmountOfMoles()))
                  return true;
         }
 
@@ -67,11 +67,20 @@ public class Images implements Iterable<Image> {
 
     public Image getVerifiedImage() throws IllegalAccessException {
         for(Image image : getImagesCollection()){
-            if (image.verifyMoles()) {
+            if (image.verifyMoles(getMaximumAmountOfMoles())) {
                 return image;
             }
         }
 
         return null;
+    }
+
+    public int getMaximumAmountOfMoles(){
+        int amountOfMoles = 0;
+        for(Image image : getImagesCollection()){
+            amountOfMoles = Math.max(amountOfMoles,image.getMoles().getSize());
+        }
+
+        return amountOfMoles;
     }
 }
