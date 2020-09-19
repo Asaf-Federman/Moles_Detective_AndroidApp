@@ -57,10 +57,15 @@ public class SegmentationModel {
     public SegmentationModel(final Activity activity, eModel segmentationModel) {
         initializeInByteBuffer();
         initializeOutBuffer();
-        loadTflite(activity, segmentationModel);
+        createTfliteIntrepreter(activity, segmentationModel);
     }
 
-    private void loadTflite(final Activity activity, eModel segmentationModel) {
+    /**
+     * Creates a tflite interpreter
+     * @param activity - the camera activity
+     * @param segmentationModel - the tflite model that will be used by the interpreter
+     */
+    private void createTfliteIntrepreter(final Activity activity, eModel segmentationModel) {
         try {
             Interpreter.Options tfliteOptions = new Interpreter.Options();
             gpuDelegate = new GpuDelegate();
@@ -80,6 +85,11 @@ public class SegmentationModel {
         }
     }
 
+    /**
+     * Receives an image, and runs the tflite interpreter on it
+     * @param modelMat - the input matrix
+     * @return output matrix with the tflite interpreter result
+     */
     public Mat segmentImage(Mat modelMat) {
         if (tfliteInterpreter != null) {
             int oLength = modelMat.height();
@@ -94,6 +104,9 @@ public class SegmentationModel {
         return modelMat;
     }
 
+    /**
+     * Changes the color of the segmentation for the user
+     */
     private void changeBrightness() {
         if (brightness_scalar > 1.0f || brightness_scalar < 0.7) {
             direction = direction * -1;
@@ -102,6 +115,11 @@ public class SegmentationModel {
         brightness_scalar = brightness_scalar + 0.15f * direction;
     }
 
+    /**
+     * Loads byte buffer into a matrix
+     * @param outImg - the tflite's interpreter output
+     * @return a matrix built from the tflite's interpreter output
+     */
     private Mat loadFromBufferToMat(int[][][] outImg) {
         Mat mat = new Mat(DIM_WIDTH, DIM_HEIGHT, CvType.CV_8UC3, Scalar.all(0));
 
@@ -127,6 +145,9 @@ public class SegmentationModel {
         outBuffer = new int[DIM_BATCH_SIZE][DIM_WIDTH][DIM_HEIGHT * OUT_CHANNELS];
     }
 
+    /**
+     * Initialize the byte buffer
+     */
     private void initializeInByteBuffer() {
         DIM_HEIGHT = DIM_LENGTH;
         DIM_WIDTH = DIM_LENGTH;
@@ -134,6 +155,10 @@ public class SegmentationModel {
         inBuffer.order(ByteOrder.nativeOrder());
     }
 
+    /**
+     * Loads the mat into a byte buffer to the tflite model
+     * @param mat - The input matrix
+     */
     private void loadMatToBuffer(Mat mat) {
         inBuffer.rewind();
         byte[] data = new byte[DIM_WIDTH * DIM_HEIGHT * IN_CHANNELS];
@@ -145,6 +170,9 @@ public class SegmentationModel {
         return isSuccessful;
     }
 
+    /**
+     * Closes all the resources used by the class instance
+     */
     public void close() {
         if (gpuDelegate != null) {
             gpuDelegate.close();

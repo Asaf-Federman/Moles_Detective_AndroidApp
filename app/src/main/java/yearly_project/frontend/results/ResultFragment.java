@@ -114,6 +114,10 @@ public class ResultFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Draws a circle around the mole in the imageView
+     * @param mole_id - the id of the mole we're currently working on
+     */
     private void drawCircleOnMole(int mole_id) {
         Image image = null;
         try {

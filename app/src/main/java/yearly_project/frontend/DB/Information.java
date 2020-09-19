@@ -61,7 +61,6 @@ public class Information implements Comparable<Information> {
         return images;
     }
 
-
     //////////////////////////////////////////// Comparable implementation ////////////////////////////////////////////
 
     @Override
@@ -73,7 +72,7 @@ public class Information implements Comparable<Information> {
 
     public boolean isValid() throws IllegalAccessException {
         return verifyCameraActivity()
-//                && verifyResults()
+                && verifyResults()
                 && verifyResultActivity();
     }
 
@@ -124,6 +123,11 @@ public class Information implements Comparable<Information> {
         file.mkdirs();
     }
 
+    /**
+     * Calculates the average result of the same mole among numerous images
+     * @param id - the mole's id
+     * @return a result object
+     */
     public Result getAverageResultOfMole(int id){
         Result result = new Result();
         int amountOfDivision = 0;

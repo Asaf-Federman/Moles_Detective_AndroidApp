@@ -42,6 +42,9 @@ public class UserInformation {
         return informationMap.get(ID);
     }
 
+    /**
+     * Loads information from the phone's directory
+     */
     public static void loadInformation() {
         File file = new File(basicPath);
         for (File directory : Objects.requireNonNull(file.listFiles())) {

@@ -55,22 +55,29 @@ public class CalculateResults extends AppCompatActivity {
         int ID = getIntent().getIntExtra("ID", 0);
         information = UserInformation.getInformation(ID);
         activity = this;
-        getResults();
+        analyzeSavedImages();
     }
 
-    private void getResults() {
+    /**
+     * Creates a numerous (the amount of the available images) async http requests to analyze the pictures.
+     */
+    private void analyzeSavedImages() {
         new Thread(() -> {
             mainHandler = new Handler(Looper.getMainLooper());
             client = new AsyncHttpClient();
             requestsInProcess = information.getImages().getSize();
             client.setResponseTimeout(60000);
             for (Image image : information.getImages()) {
-                asyncTask(image);
+                sendForAnalyze(image);
             }
         }).start();
     }
 
-    private void asyncTask(Image image) {
+    /**
+     * Sends an asynchronous http POST request to the server to analyze the image
+     * @param image - the image that is being sent to the server
+     */
+    private void sendForAnalyze(Image image) {
         File photo = new File(image.getPath());
         Runnable myRunnable = () -> {
             RequestParams params = new RequestParams();
@@ -106,6 +113,10 @@ public class CalculateResults extends AppCompatActivity {
         mainHandler.post(myRunnable);
     }
 
+    /**
+     * Gets the server's exception traceback
+     * @param errorResponse - The json object that stores the traceback
+     */
     private void printTraceback(JSONObject errorResponse) {
         try {
             Gson gson = new Gson();
@@ -119,6 +130,10 @@ public class CalculateResults extends AppCompatActivity {
         }
     }
 
+    /**
+     * Stores the HTTP failure messages inside an array
+     * @param errorResponse - the json object to recover the failure messages from
+     */
     private void addExceptionReason(JSONObject errorResponse) {
         try {
             Gson gson = new Gson();
@@ -132,6 +147,11 @@ public class CalculateResults extends AppCompatActivity {
         }
     }
 
+    /**
+     * Converts the response json to a mole object
+     * @param successResponse - the response json
+     * @param image - the image database object
+     */
     private void convertJsonToMoles(JSONObject successResponse, Image image) {
         Gson gson = new Gson();
 
@@ -151,6 +171,9 @@ public class CalculateResults extends AppCompatActivity {
         }
     }
 
+    /**
+     * Once all the HTTP request has ended, it verifies the results and end activity accordingly
+     */
     private synchronized void onTaskCompleted() {
         --requestsInProcess;
         if (requestsInProcess == 0) {

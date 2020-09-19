@@ -130,6 +130,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         initializeTensorFlowModel();
     }
 
+    /**
+     * Occurs on the main button click event, starts looking and saving images of the mole(s)
+     * @param view - the start button
+     */
     public void OnStartButtonClick(View view) {
         startButton.setClickable(false);
         AlphaAnimation animation = new AlphaAnimation(1F, 0.0F);
@@ -153,7 +157,11 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     public void onClick(View v) {}
 
     private class GestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-
+        /**
+         * Scales the circle according to the hand gestures
+         * @param detector - detector object that catches the hand gestures
+         * @return a boolean value that concur it succeeds (in our use case it is always true)
+         */
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             circle.scale(detector.getScaleFactor());
@@ -162,6 +170,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    /**
+     * Reinitialize activity
+     */
     @Override
     public void onResume() {
         super.onResume();
@@ -182,20 +193,28 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    public Mat onCameraFrame(Mat mat) {
+    /**
+     * Modify the matrix it receives on each camera frame
+     * @param inputMatrix - original matrix
+     * @return modified matrix
+     */
+    public Mat onCameraFrame(Mat inputMatrix) {
         Mat rectangle, segmentImage;
 
-        cvtColor(mat, mat, Imgproc.COLOR_RGBA2RGB);
-        rectangle = cutRectangle(mat);
+        cvtColor(inputMatrix, inputMatrix, Imgproc.COLOR_RGBA2RGB);
+        rectangle = cutSquare(inputMatrix);
         segmentImage = segModel.segmentImage(rectangle);
         checkForSegmentation(rectangle);
         ifActivityDone();
-        addWeights(mat, segmentImage);
-        Imgproc.circle(mat, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
+        addWeights(inputMatrix, segmentImage);
+        Imgproc.circle(inputMatrix, circle.getCenter(), (int) circle.getRadius(), new Scalar(255, 255, 255), 3, Core.LINE_AA);
 
-        return mat;
+        return inputMatrix;
     }
 
+    /**
+     * If the activity is done, it verifies the data and exits the activity.
+     */
     private void ifActivityDone() {
         if (information.getImages().getSize()  >= AMOUNT_OF_PICTURES_TO_TAKE) {
             synchronized (this) {
@@ -217,6 +236,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    /**
+     * Checks for segmentation in the matrix, and saves the matrix if segmentation is found and the user clicked the button
+     * @param mat - the input matrix
+     */
     private void checkForSegmentation(Mat mat) {
         if (isStart) {
             if (segModel.isSegmentationSuccessful()) {
@@ -227,18 +250,32 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    /**
+     * Modify the matrix and send it to the Database
+     * @param mat - input matrix
+     */
     private void convertMatToPicture(Mat mat) {
         cvtColor(mat,mat,Imgproc.COLOR_BGR2RGB);
         Imgproc.resize(mat,mat, new org.opencv.core.Size(250,250));
         information.getImages().addImage(mat);
     }
 
-    private void addWeights(Mat src, Mat dest) {
-        dest = createMask(dest);
-        Mat mat = src.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
-        Core.addWeighted(mat, 1f, dest, 0.3, 1, mat);
+    /**
+     * Paste the segmentation on top of the input source matrix
+     * @param sourceMatrix - source matrix
+     * @param segmentationResult - the output of the segmentation
+     */
+    private void addWeights(Mat sourceMatrix, Mat segmentationResult) {
+        segmentationResult = createMask(segmentationResult);
+        Mat mat = sourceMatrix.rowRange((int) tangentSquare.getTopLeft().y, (int) tangentSquare.getBottomRight().y).colRange((int) tangentSquare.getTopLeft().x, (int) tangentSquare.getBottomRight().x);
+        Core.addWeighted(mat, 1f, segmentationResult, 0.3, 1, mat);
     }
 
+    /**
+     * Creates a mask that surround the circle that is delineated inside the square
+     * @param inputMat - the original matrix
+     * @return a modified image that contains only the delineated circle and black background that surrounds him
+     */
     private Mat createMask(Mat inputMat) {
         Mat mask = new Mat(inputMat.rows(), inputMat.cols(), CvType.CV_8UC3, Scalar.all(0));
 
@@ -258,7 +295,12 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         circle = initializeCircle(posHeight, posWidth);
     }
 
-    private Mat cutRectangle(Mat inputMat) {
+    /**
+     * Cuts a square that delineate the circle
+     * @param inputMat - the original matrix
+     * @return a new matrix of the square that delineate the circle
+     */
+    private Mat cutSquare(Mat inputMat) {
         Point point = circle.getCenter().clone();
 
         point.x = point.x - circle.getRadius();
@@ -284,6 +326,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         finish();
     }
 
+    /**
+     * Initialize the camera and it's lifecycle activities (including the preview and the image analysis)
+     */
     @SuppressLint("RestrictedApi")
     private void startCamera() {
         cameraProviderFuture.addListener(() -> {
@@ -305,6 +350,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }, ContextCompat.getMainExecutor(this));
     }
 
+    /**
+     * Set the camera's torch accordingly to the button
+     */
     private void setTorch() {
         try {
             CameraInfo cameraInfo = camera.getCameraInfo();
@@ -317,7 +365,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-
+    /**
+     * Sets the camera's preview
+     * @return a preview object as part of the camera's lifecycle
+     */
     private Preview setPreview() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -328,6 +379,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return new Preview.Builder().setTargetResolution(screen).build();
     }
 
+    /**
+     * Sets the image analysis
+     * @return an image analysis object as part of the camera's lifecycle
+     */
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new Size(previewView.getWidth(), previewView.getHeight()));
@@ -387,6 +442,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         return true;
     }
 
+    /**
+     * Pause the activity
+     */
     @Override
     protected void onPause() {
         super.onPause();
@@ -398,6 +456,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    /**
+     * Destroys the activity and it's resources
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -411,6 +472,10 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    /**
+     * Click listen for the torch button
+     * @param view - the torch button
+     */
     public void OnTorch(View view) {
         int torchState;
 

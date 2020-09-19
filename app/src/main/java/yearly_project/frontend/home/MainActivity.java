@@ -56,13 +56,32 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         UserInformation.loadInformation();
         askForPermissions();
+        createItemTouchHelper();
+        createAdapterClickListener();
+    }
 
+    /**
+     * Creates a click listener for every row in the recyclerview. it starts the result activity with the relevant's row information
+     */
+    private void createAdapterClickListener() {
+        adapter.setOnItemClickListener(information -> {
+            Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+            intent.putExtra("ID", information.getSerialNumber());
+            intent.putExtra("status", Constant.VIEW);
+            startActivity(intent);
+        });
+    }
+
+
+    private void createItemTouchHelper() {
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
             }
-
+            /**
+             * Deletes the relevant row from the recyclerview if swiped
+             */
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int pos = viewHolder.getAdapterPosition();
@@ -71,12 +90,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Item number " + (pos + 1) + " got deleted", Toast.LENGTH_SHORT).show();
             }
         }).attachToRecyclerView(recyclerView);
-        adapter.setOnItemClickListener(information -> {
-            Intent intent = new Intent(MainActivity.this, ResultActivity.class);
-            intent.putExtra("ID", information.getSerialNumber());
-            intent.putExtra("status", Constant.VIEW);
-            startActivity(intent);
-        });
     }
 
     public void OnCameraClick(View view) {
@@ -92,6 +105,9 @@ public class MainActivity extends AppCompatActivity {
         adapter.submitList(informationList);
     }
 
+    /**
+     * a callback from the database information map to the recyclerview object
+     */
     private void createCallBack() {
         callback = new ObservableMap.OnMapChangedCallback() {
             @Override
@@ -102,6 +118,12 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    /**
+     * Handles that activities' flow and verify the results.
+     * @param requestCode - the next activity that is requested
+     * @param resultCode - exit status of the previous activity
+     * @param data - the data that is stored by the previous activity
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -146,6 +168,12 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, permissions, 10);
     }
 
+    /**
+     * Handles the permissions needed by the application
+     * @param requestCode - the request code of the request
+     * @param permissions - the needed permissions
+     * @param grantResults - the status of the permission
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NotNull String[] permissions, @NotNull int[] grantResults) {
