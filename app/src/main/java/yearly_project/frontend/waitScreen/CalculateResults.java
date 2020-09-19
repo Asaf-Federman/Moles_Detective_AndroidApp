@@ -77,22 +77,15 @@ public class CalculateResults extends AppCompatActivity {
             try {
                 params.put("mole_picture", photo, "image/png");
                 params.setUseJsonStreamer(false);
-            } catch (FileNotFoundException ignored) {}
+            } catch (FileNotFoundException ignored) {
+            }
 
             client.post(activity, "http://" + baseUrl + "/api/analyze?dpi=" + getResources().getDisplayMetrics().densityDpi, params, new JsonHttpResponseHandler() {
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     super.onFailure(statusCode, headers, throwable, errorResponse);
-                    try {
-                        Gson gson = new Gson();
-                        Type mapType = new TypeToken<Map<String,String>>(){}.getType();
-                        String data = errorResponse.get("data").toString();
-                        LinkedTreeMap<String,String> errorMap = gson.fromJson(data, mapType);
-                        errors.add(errorMap.get("description"));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Timber.i(errorResponse.toString());
-                    }
+                    addExceptionReason(errorResponse);
+                    printTraceback(errorResponse);
                 }
 
                 @Override
@@ -105,6 +98,7 @@ public class CalculateResults extends AppCompatActivity {
                 public void onFinish() {
                     super.onFinish();
                     onTaskCompleted();
+                    Timber.i("%s image analyze has been completed", image.getName());
                 }
             });
         };
@@ -112,12 +106,38 @@ public class CalculateResults extends AppCompatActivity {
         mainHandler.post(myRunnable);
     }
 
-    private void convertJsonToMoles(JSONObject jsonObject, Image image) {
+    private void printTraceback(JSONObject errorResponse) {
+        try {
+            Gson gson = new Gson();
+            Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+            String data = errorResponse.get("data").toString();
+            LinkedTreeMap<String, String> errorMap = gson.fromJson(data, mapType);
+            Timber.i(errorMap.get("traceback"));
+        } catch (Exception e) {
+            Timber.i("Couldn't get the Exception's traceback");
+            e.printStackTrace();
+        }
+    }
+
+    private void addExceptionReason(JSONObject errorResponse) {
+        try {
+            Gson gson = new Gson();
+            Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+            String data = errorResponse.get("data").toString();
+            LinkedTreeMap<String, String> errorMap = gson.fromJson(data, mapType);
+            errors.add(errorMap.get("description"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            Timber.i(String.valueOf(errorResponse));
+        }
+    }
+
+    private void convertJsonToMoles(JSONObject successResponse, Image image) {
         Gson gson = new Gson();
 
         try {
-            for (int i = 0; i < jsonObject.length(); ++i) {
-                String moleDescription = jsonObject.get(Objects.requireNonNull(jsonObject.names()).get(i).toString()).toString().replaceAll("\\s", "");
+            for (int i = 0; i < successResponse.length(); ++i) {
+                String moleDescription = successResponse.get(Objects.requireNonNull(successResponse.names()).get(i).toString()).toString().replaceAll("\\s", "");
                 Timber.i(moleDescription);
                 MoleResult moleResult = gson.fromJson(moleDescription, MoleResult.class);
                 Result result = new Result(moleResult.asymmetric_score, moleResult.border_score,
@@ -127,6 +147,7 @@ public class CalculateResults extends AppCompatActivity {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Timber.i(String.valueOf(successResponse));
         }
     }
 
@@ -134,15 +155,20 @@ public class CalculateResults extends AppCompatActivity {
         --requestsInProcess;
         if (requestsInProcess == 0) {
             String errorString = String.join("\n", this.errors);
-            runOnUiThread(()-> Toast.makeText(activity,errorString,Toast.LENGTH_LONG).show());
+            if (!errorString.isEmpty())
+                runOnUiThread(() -> Toast.makeText(activity, errorString, Toast.LENGTH_LONG).show());
             try {
                 if (information.verifyResults()) {
                     finishTask(Constant.RESULT_SUCCESS);
                 } else {
-                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results\nReceived the following errors:\n\n" + errorString, ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+                    String errors = "";
+                    if (!errorString.isEmpty())
+                        errors = "\nReceived the following errors:\n\n" + errorString;
+                    String finalErrors = errors;
+                    runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to get results" + finalErrors, ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
                 }
             } catch (IllegalAccessException ignore) {
-                runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to verify the results\n" + errorString, ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
+                runOnUiThread(() -> Utilities.createAlertDialog(activity, "ERROR", "Failed to verify the results", ((dialog, which) -> finishTask(Constant.RESULT_FAILURE))));
             }
         }
     }

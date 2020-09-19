@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -145,6 +146,10 @@ public class ResultFragment extends Fragment {
         for (Map.Entry<View, eToolTip> entry : toolTips.entrySet()) {
             entry.getKey().setOnClickListener(this::onToolTipClick);
         }
+
+        for(Map.Entry<ProgressBar,Integer> entry : progress.entrySet()){
+            entry.getKey().setOnClickListener(this::showPercentage);
+        }
     }
 
     private int getColor(int progress) {
@@ -199,5 +204,10 @@ public class ResultFragment extends Fragment {
                 .overlay(false).floatingAnimation(Tooltip.Animation.Companion.getDEFAULT())
                 .create();
         builder.show(view, toolTip.gravity, false);
+    }
+
+    private void showPercentage(View view){
+        ProgressBar progressBar = (ProgressBar)view;
+        Toast.makeText(getActivity(),String.format("Received %d/100 points in this field", progressBar.getProgress()),Toast.LENGTH_SHORT).show();
     }
 }

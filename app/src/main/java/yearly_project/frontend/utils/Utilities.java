@@ -70,6 +70,7 @@ public class Utilities {
                 .setMessage(content)
                 .setPositiveButton(android.R.string.ok, clickListener)
                 .setIcon(android.R.drawable.ic_dialog_alert)
+                .setCancelable(false)
                 .show();
     }
 

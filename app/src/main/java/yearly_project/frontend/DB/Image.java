@@ -8,6 +8,7 @@ import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.time.Instant;
 
 public class Image {
     private final static String type = "png";
@@ -16,9 +17,11 @@ public class Image {
     private String name;
     private String path;
     private Moles moles;
+    private long timestamp;
 
     public Image(String name, String path, Mat mat) {
-        this.name = name + "." + type;
+        this.timestamp =  Instant.now().toEpochMilli();
+        this.name = timestamp + "_" + name + "." + type;
         this.folder = path + "/" + folderName;
         this.path = this.folder + "/" + this.name;
         moles = new Moles();
