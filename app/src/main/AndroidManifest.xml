@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="yearly_project.frontend">
+    package="yearly_project.android">
 
     <supports-screens
         android:anyDensity="true"
@@ -37,7 +37,7 @@
         android:roundIcon="@drawable/logo4"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".home.MainActivity"
+            android:name="yearly_project.android.home.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,13 +48,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".waitScreen.CalculateResults"
+            android:name="yearly_project.android.waitScreen.CalculateResults"
             android:screenOrientation="portrait"/>
         <activity
-            android:name=".results.ResultActivity"
+            android:name="yearly_project.android.results.ResultActivity"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".camera.CameraActivity"
+            android:name="yearly_project.android.camera.CameraActivity"
             android:screenOrientation="portrait">
         </activity>
     </application>
