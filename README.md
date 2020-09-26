@@ -1,6 +1,6 @@
 ## Skin Detective App
 
-**The app is aimed to discover dangerous skin lesion(s) such as malignant melanoma.**
+ **The app is aimed to discover dangerous skin lesion(s) such as malignant melanoma.**
 
 ### ***Usage:*** 
 
@@ -14,8 +14,16 @@
 
 #### ***Home Activity***
 
-[Home Activity](app/pictures/Home_Activity)
+<img src="app/pictures/Home_Activity.jpeg" width="100">
 
 #### ***Camera Activity***
 
-[Camera Activity](docs/CONTRIBUTING.md)
+<img src="app/pictures/Camera_Activity.jpeg" width="100">
+
+#### ***Analyse Results Activity***
+
+<img src="app/pictures/Analyse_Results_Activity.jpeg" width="100">
+
+#### ***Results Activity***
+
+<img src="app/pictures/Results_Activity.jpeg" width="100">
