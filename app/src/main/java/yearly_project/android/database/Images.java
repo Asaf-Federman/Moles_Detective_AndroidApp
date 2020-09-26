@@ -1,4 +1,4 @@
-package yearly_project.android.DB;
+package yearly_project.android.database;
 
 import androidx.annotation.NonNull;
 

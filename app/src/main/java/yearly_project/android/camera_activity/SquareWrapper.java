@@ -1,4 +1,4 @@
-package yearly_project.android.camera;
+package yearly_project.android.camera_activity;
 
 import org.opencv.core.Point;
 import org.opencv.core.Rect;

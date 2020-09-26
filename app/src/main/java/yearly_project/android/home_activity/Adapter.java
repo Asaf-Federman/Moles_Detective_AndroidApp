@@ -1,4 +1,4 @@
-package yearly_project.android.home;
+package yearly_project.android.home_activity;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -13,8 +13,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import yearly_project.android.DB.Image;
-import yearly_project.android.DB.Information;
+import yearly_project.android.database.Image;
+import yearly_project.android.database.Information;
 import yearly_project.android.R;
 
 public class Adapter extends ListAdapter<Information,Adapter.MyHolder> {

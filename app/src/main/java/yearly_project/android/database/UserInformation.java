@@ -1,4 +1,4 @@
-package yearly_project.android.DB;
+package yearly_project.android.database;
 
 import androidx.databinding.ObservableArrayMap;
 import androidx.databinding.ObservableMap;
@@ -7,7 +7,7 @@ import java.io.File;
 import java.util.Objects;
 
 import yearly_project.android.Constant;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 public class UserInformation {
     private static int counter = 0;

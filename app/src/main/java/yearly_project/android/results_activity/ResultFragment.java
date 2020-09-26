@@ -1,4 +1,4 @@
-package yearly_project.android.results;
+package yearly_project.android.results_activity;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -24,13 +24,13 @@ import java.util.Objects;
 import it.sephiroth.android.library.xtooltip.Tooltip;
 import timber.log.Timber;
 import yearly_project.android.Constant;
-import yearly_project.android.DB.Image;
-import yearly_project.android.DB.Information;
-import yearly_project.android.DB.Mole;
-import yearly_project.android.DB.Result;
-import yearly_project.android.DB.UserInformation;
+import yearly_project.android.database.Image;
+import yearly_project.android.database.Information;
+import yearly_project.android.database.Mole;
+import yearly_project.android.database.Result;
+import yearly_project.android.database.UserInformation;
 import yearly_project.android.R;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 public class ResultFragment extends Fragment {
 

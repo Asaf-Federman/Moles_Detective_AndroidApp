@@ -1,4 +1,4 @@
-package yearly_project.android.results;
+package yearly_project.android.results_activity;
 
 import android.os.Bundle;
 import android.view.View;
@@ -13,10 +13,10 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 
 import yearly_project.android.Constant;
-import yearly_project.android.DB.Information;
-import yearly_project.android.DB.UserInformation;
+import yearly_project.android.database.Information;
+import yearly_project.android.database.UserInformation;
 import yearly_project.android.R;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 import static yearly_project.android.Constant.CREATE;
 import static yearly_project.android.Constant.VIEW;

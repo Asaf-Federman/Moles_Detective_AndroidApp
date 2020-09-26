@@ -1,4 +1,4 @@
-package yearly_project.android.camera;
+package yearly_project.android.camera_activity;
 
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
@@ -51,10 +51,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import timber.log.Timber;
 import yearly_project.android.Constant;
-import yearly_project.android.DB.Information;
-import yearly_project.android.DB.UserInformation;
+import yearly_project.android.database.Information;
+import yearly_project.android.database.UserInformation;
 import yearly_project.android.R;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
 import static yearly_project.android.Constant.AMOUNT_OF_PICTURES_TO_TAKE;

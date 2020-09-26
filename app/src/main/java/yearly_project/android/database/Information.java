@@ -1,4 +1,4 @@
-package yearly_project.android.DB;
+package yearly_project.android.database;
 
 import android.annotation.SuppressLint;
 
@@ -13,7 +13,7 @@ import java.util.Date;
 
 import timber.log.Timber;
 import yearly_project.android.Constant;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 public class Information implements Comparable<Information> {
     private Date date;

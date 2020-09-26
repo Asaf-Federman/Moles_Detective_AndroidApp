@@ -1,4 +1,4 @@
-package yearly_project.android.waitScreen;
+package yearly_project.android.calculate_results_activity;
 
 import java.util.ArrayList;
 

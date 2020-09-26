@@ -1,4 +1,4 @@
-package yearly_project.android.utils;
+package yearly_project.android.utilities;
 
 import android.app.Activity;
 import android.content.Context;

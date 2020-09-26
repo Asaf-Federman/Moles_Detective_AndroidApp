@@ -1,4 +1,4 @@
-package yearly_project.android.camera;
+package yearly_project.android.camera_activity;
 
 import android.app.Activity;
 
@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import timber.log.Timber;
-import yearly_project.android.utils.Utilities;
+import yearly_project.android.utilities.Utilities;
 
 public class SegmentationModel {
 

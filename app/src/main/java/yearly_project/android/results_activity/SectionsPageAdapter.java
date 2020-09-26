@@ -1,4 +1,4 @@
-package yearly_project.android.results;
+package yearly_project.android.results_activity;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;

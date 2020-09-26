@@ -1,4 +1,4 @@
-package yearly_project.android.home;
+package yearly_project.android.home_activity;
 
 import android.Manifest;
 import android.content.Intent;
@@ -23,13 +23,13 @@ import java.util.List;
 
 import timber.log.Timber;
 import yearly_project.android.Constant;
-import yearly_project.android.DB.Information;
-import yearly_project.android.DB.UserInformation;
+import yearly_project.android.database.Information;
+import yearly_project.android.database.UserInformation;
 import yearly_project.android.R;
-import yearly_project.android.camera.CameraActivity;
-import yearly_project.android.results.ResultActivity;
-import yearly_project.android.utils.Utilities;
-import yearly_project.android.waitScreen.CalculateResults;
+import yearly_project.android.camera_activity.CameraActivity;
+import yearly_project.android.results_activity.ResultActivity;
+import yearly_project.android.utilities.Utilities;
+import yearly_project.android.calculate_results_activity.CalculateResults;
 
 public class MainActivity extends AppCompatActivity {
 
