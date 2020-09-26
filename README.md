@@ -14,16 +14,16 @@
 
 #### ***Home Activity***
 
-<img src="app/pictures/Home_Activity.jpeg" width="100">
+<img src="app/pictures/Home_Activity.jpeg" width="300">
 
 #### ***Camera Activity***
 
-<img src="app/pictures/Camera_Activity.jpeg" width="100">
+<img src="app/pictures/Camera_Activity.jpeg" width="300">
 
 #### ***Analyse Results Activity***
 
-<img src="app/pictures/Analyse_Results_Activity.jpeg" width="100">
+<img src="app/pictures/Analyse_Results_Activity.jpeg" width="300">
 
 #### ***Results Activity***
 
-<img src="app/pictures/Results_Activity.jpeg" width="100">
+<img src="app/pictures/Results_Activity.jpeg" width="300">
