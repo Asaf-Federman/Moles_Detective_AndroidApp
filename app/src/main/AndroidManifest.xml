@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="yearly_project.android">
+
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.Write" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <permission
+        android:name="android.permission.FLASHLIGHT"
+        android:permissionGroup="android.permission-group.HARDWARE_CONTROLS"
+        android:protectionLevel="normal" />
+
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.camera.front" />
+    <uses-feature android:name="android.hardware.camera.front.autofocus" />
+    <uses-feature android:name="android.hardware.camera.flash" />
+
+    <application
+        android:allowBackup="true"
+        android:configChanges="keyboardHidden|screenSize"
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/logo4"
+        android:keepScreenOn="true"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/logo4"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="yearly_project.android.home_activity.MainActivity"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="yearly_project.android.calculate_results_activity.CalculateResults"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="yearly_project.android.results_activity.ResultActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="yearly_project.android.camera_activity.CameraActivity"
+            android:screenOrientation="portrait">
+        </activity>
+    </application>
+
+</manifest>
