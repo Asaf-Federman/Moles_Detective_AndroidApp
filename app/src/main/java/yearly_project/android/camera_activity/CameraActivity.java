@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Size;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -40,6 +39,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.Locale;
@@ -51,9 +51,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import timber.log.Timber;
 import yearly_project.android.Constant;
+import yearly_project.android.R;
 import yearly_project.android.database.Information;
 import yearly_project.android.database.UserInformation;
-import yearly_project.android.R;
 import yearly_project.android.utilities.Utilities;
 
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -374,7 +374,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
         int width = displayMetrics.widthPixels;
-        Size screen = new Size(width, height); //size of the screen
+        android.util.Size screen = new android.util.Size(width, height); //size of the screen
         Preview.Builder builder = new Preview.Builder().setTargetResolution(screen);
 
         return builder.build();
@@ -386,7 +386,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
      */
     @SuppressLint("UnsafeExperimentalUsageError")
     private ImageAnalysis setImageAnalysis() {
-        ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new Size(previewView.getWidth(), previewView.getHeight()));
+        ImageAnalysis.Builder builder = new ImageAnalysis.Builder().setTargetResolution(new android.util.Size(previewView.getWidth(), previewView.getHeight()));
         imageAnalysis = builder.build();
 
         final AtomicInteger[] frameCounter = {new AtomicInteger()};
