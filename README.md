@@ -24,6 +24,11 @@
 | `Analyse Results Activity` | `Results Activity` |
 |  <img src="app/pictures/Analyse_Results_Activity.jpeg" width="300"> | <img src="app/pictures/Results_Activity.jpeg" width="300"> |
 
+### ***Netron preview***
+
+The model is `quantization aware trained` that was converted by `TOCO converter` to `tflite` format
+<img src="app/pictures/Netron_Preview.png">
+
 ### ***UML class diagrams***
 
 Activity | SVG file | PNG picture |
